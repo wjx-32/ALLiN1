@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ModelScope Desk - 多模型对比工作台</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --line: #e5e7eb;
+      --line-2: #dbe3ef;
+      --text: #111827;
+      --muted: #6b7280;
+      --muted-2: #94a3b8;
+      --blue: #2563eb;
+      --blue-2: #eff6ff;
+      --green: #16a34a;
+      --green-2: #f0fdf4;
+      --orange: #ea580c;
+      --orange-2: #fff7ed;
+      --purple: #7c3aed;
+      --purple-2: #f5f3ff;
+      --red: #dc2626;
+      --red-2: #fef2f2;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      background: none;
+    }
+
+    .topbar {
+      height: 68px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #111827, #2563eb);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand-copy h1 {
+      font-size: 17px;
+      line-height: 1.1;
+      margin: 0 0 4px;
+    }
+
+    .brand-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-actions,
+    .nav-tabs,
+    .view-switch,
+    .toolbar-actions,
+    .model-meta,
+    .result-tools,
+    .followup-bar,
+    .history-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-tabs .tab,
+    .view-switch .switch-btn,
+    .seg-btn,
+    .ghost-btn,
+    .small-btn {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      color: var(--muted);
+      transition: 0.2s ease;
+    }
+
+    .nav-tabs .tab.active,
+    .view-switch .switch-btn.active,
+    .seg-btn.active {
+      background: var(--blue-2);
+      color: var(--blue);
+      border-color: #bfdbfe;
+      font-weight: 600;
+    }
+
+    .top-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+    }
+
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 0;
+    }
+
+    .sidebar {
+      background: #f8fafc;
+      border-right: 1px solid var(--line);
+      padding: 20px 18px;
+      overflow: auto;
+    }
+
+    .section-title {
+      font-size: 12px;
+      color: var(--muted-2);
+      margin: 0 0 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .quick-card,
+    .history-item {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02);
+    }
+
+    .quick-card h3,
+    .history-item h4,
+    .composer-header h2,
+    .panel-header h3,
+    .compare-header h3 {
+      margin: 0;
+    }
+
+    .quick-card p,
+    .history-item p,
+    .empty-state p,
+    .field-help {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .history-item {
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .history-item:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    .history-item.active {
+      border-color: #93c5fd;
+      background: #f8fbff;
+    }
+
+    .workspace {
+      overflow: auto;
+      padding: 22px;
+    }
+
+    .workspace-inner {
+      display: grid;
+      gap: 18px;
+      min-width: 1120px;
+    }
+
+    .composer,
+    .compare-stage,
+    .insight-row,
+    .history-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .composer {
+      padding: 22px;
+    }
+
+    .composer-header,
+    .panel-header,
+    .compare-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--panel);
+    }
+
+    .badge.blue {
+      color: var(--blue);
+      background: var(--blue-2);
+      border-color: #bfdbfe;
+    }
+
+    .badge.green {
+      color: var(--green);
+      background: var(--green-2);
+      border-color: #bbf7d0;
+    }
+
+    .badge.orange {
+      color: var(--orange);
+      background: var(--orange-2);
+      border-color: #fed7aa;
+    }
+
+    .composer-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) 420px;
+      gap: 18px;
+    }
+
+    .prompt-card,
+    .selector-card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel-2);
+      padding: 18px;
+      min-height: 100%;
+    }
+
+    .prompt-shell {
+      border: 1px solid var(--line-2);
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .prompt-shell textarea {
+      width: 100%;
+      min-height: 180px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      padding: 18px 18px 12px;
+      background: transparent;
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .prompt-footer {
+      border-top: 1px solid var(--line);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: #fbfdff;
+    }
+
+    .counter {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .action-btn {
+      height: 44px;
+      padding: 0 18px;
+      border-radius: 14px;
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
+
+    .action-btn.primary {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .action-btn.primary:hover {
+      background: #1d4ed8;
+    }
+
+    .action-btn.primary:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+    }
+
+    .action-btn.secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .selector-top {
+      display: grid;
+      gap: 12px;
+    }
+
+    .segmented {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .seg-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .pool-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .model-option {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+      transition: 0.2s ease;
+      text-align: left;
+    }
+
+    .model-option:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    .model-option.selected {
+      background: var(--blue-2);
+      border-color: #93c5fd;
+    }
+
+    .model-option.disabled {
+      opacity: 0.5;
+    }
+
+    .model-name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .model-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      min-height: 34px;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .mini-pill {
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      font-size: 11px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .selected-strip {
+      margin-top: 16px;
+      border-top: 1px dashed var(--line-2);
+      padding-top: 14px;
+    }
+
+    .selected-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .selected-chip {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 10px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .selected-chip button {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .insight-row {
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    .metric-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      background: linear-gradient(180deg, #fff, #fbfdff);
+    }
+
+    .metric-card strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .metric-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .compare-stage {
+      padding: 20px;
+    }
+
+    .compare-header {
+      margin-bottom: 16px;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .compare-grid.list-mode {
+      grid-template-columns: 1fr;
+    }
+
+    .result-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 620px;
+      overflow: hidden;
+    }
+
+    .result-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fcfdff;
+    }
+
+    .model-left {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .model-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .avatar-openai { background: #111827; }
+    .avatar-anthropic { background: #d97706; }
+    .avatar-google { background: #2563eb; }
+    .avatar-moonshot { background: #7c3aed; }
+    .avatar-deepseek { background: #0f766e; }
+    .avatar-baidu { background: #2563eb; }
+    .avatar-alibaba { background: #ea580c; }
+
+    .model-left h4 {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+
+    .model-left p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+
+    .status.success {
+      color: var(--green);
+      background: var(--green-2);
+      border-color: #bbf7d0;
+    }
+
+    .status.loading {
+      color: var(--blue);
+      background: var(--blue-2);
+      border-color: #bfdbfe;
+    }
+
+    .status.error {
+      color: var(--red);
+      background: var(--red-2);
+      border-color: #fecaca;
+    }
+
+    .result-body {
+      padding: 18px;
+      flex: 1;
+      overflow: auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-box,
+    .response-box,
+    .diff-box {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 15px;
+      background: #fff;
+    }
+
+    .box-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .summary-box ul,
+    .diff-box ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .response-box .content {
+      color: #1f2937;
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+
+    .skeleton {
+      display: grid;
+      gap: 10px;
+    }
+
+    .skeleton span {
+      display: block;
+      height: 11px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #eef2f7, #f8fafc, #eef2f7);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+
+    .error-box {
+      border: 1px dashed #fecaca;
+      background: #fff8f8;
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--red);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .result-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      background: #fcfdff;
+      display: grid;
+      gap: 12px;
+    }
+
+    .toolbar-actions {
+      justify-content: space-between;
+    }
+
+    .muted-small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .small-btn,
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 12px;
+    }
+
+    .small-btn.primary {
+      border-color: #bfdbfe;
+      background: var(--blue-2);
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .small-btn.best {
+      border-color: #fde68a;
+      background: #fffbeb;
+      color: #b45309;
+    }
+
+    .followup-input {
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 12px;
+      width: 100%;
+      outline: 0;
+    }
+
+    .history-panel {
+      padding: 20px;
+    }
+
+    .history-table {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .history-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 120px 120px;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .history-row.head {
+      color: var(--muted);
+      background: #fbfdff;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--line-2);
+      background: #fbfdff;
+      border-radius: 22px;
+      padding: 48px 28px;
+      text-align: center;
+    }
+
+    .toast {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: #111827;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to { background-position: -200% 0; }
+    }
+
+    @media (max-width: 1360px) {
+      .composer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .insight-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-copy">
+        <h1>ModelScope Desk</h1>
+        <p>国内 / 海外大模型并行对比工作台</p>
+      </div>
+      <nav class="nav-tabs">
+        <button class="tab active">工作台</button>
+        <button class="tab">历史记录</button>
+        <button class="tab">模型管理</button>
+      </nav>
+    </div>
+
+    <div class="top-actions">
+      <button class="top-icon" title="搜索">⌕</button>
+      <button class="top-icon" title="消息">◌</button>
+      <button class="top-icon" title="设置">⚙</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div class="side-stack">
+        <div class="quick-card">
+          <p class="section-title">产品定位</p>
+          <h3>一次问同一个问题，比较 3 个模型</h3>
+          <p>面向产品经理、运营、研发和内容用户，让比较结果、选择最佳答案、继续追问都在一个桌面工作台内完成。</p>
+        </div>
+
+        <div class="quick-card">
+          <p class="section-title">默认组合</p>
+          <div class="badge-row">
+            <span class="badge blue">GPT-4o</span>
+            <span class="badge orange">Claude</span>
+            <span class="badge green">DeepSeek</span>
+          </div>
+          <p>兼顾国际通用能力、中文质量和成本效率。</p>
+        </div>
+      </div>
+
+      <p class="section-title">最近对比</p>
+      <div class="side-stack" id="historyList"></div>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-inner">
+        <section class="composer">
+          <div class="composer-header">
+            <div>
+              <h2>多模型对比工作台</h2>
+              <p class="subtitle">支持从国内和国外常见模型中选择，单次最多勾选 3 个模型，对同一问题并行出结果并继续多轮追问。</p>
+            </div>
+            <div class="badge-row">
+              <span class="badge blue">PC 端优先</span>
+              <span class="badge green">最多 3 模型</span>
+              <span class="badge orange">高保真原型</span>
+            </div>
+          </div>
+
+          <div class="composer-grid">
+            <div class="prompt-card">
+              <div class="panel-header">
+                <div>
+                  <h3>输入区</h3>
+                  <p class="subtitle">支持长 Prompt、多轮追问、继续优化。</p>
+                </div>
+                <div class="view-switch">
+                  <button class="switch-btn active" data-view="grid">三栏对比</button>
+                  <button class="switch-btn" data-view="list">列表阅读</button>
+                </div>
+              </div>
+
+              <div class="prompt-shell">
+                <textarea id="promptInput" placeholder="例如：请帮我输出一版面向企业采购场景的 AI 助手首页方案，包含导航、功能区、价格区和行动按钮，并说明为什么这样设计。">请帮我输出一版面向企业采购场景的 AI 助手首页方案，包含导航、功能区、价格区和行动按钮，并说明为什么这样设计。</textarea>
+                <div class="prompt-footer">
+                  <div class="field-help">
+                    同一输入同时发给 3 个模型。支持继续追问某一个模型，或在三列基础上再发下一轮。
+                  </div>
+                  <div class="toolbar-actions">
+                    <span class="counter"><span id="promptCount">0</span> / 4000</span>
+                    <button class="action-btn secondary" id="fillExampleBtn">换一个示例</button>
+                    <button class="action-btn primary" id="runBtn">开始对比</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="selector-card">
+              <div class="selector-top">
+                <div class="panel-header">
+                  <div>
+                    <h3>模型选择器</h3>
+                    <p class="subtitle">国内 / 国外模型池，最多选择 3 个。</p>
+                  </div>
+                  <span class="badge blue" id="selectedCountBadge">已选 0 / 3</span>
+                </div>
+
+                <div class="segmented" id="poolTabs">
+                  <button class="seg-btn active" data-pool="all">全部模型</button>
+                  <button class="seg-btn" data-pool="overseas">国外模型</button>
+                  <button class="seg-btn" data-pool="domestic">国内模型</button>
+                </div>
+              </div>
+
+              <div class="pool-grid" id="modelGrid"></div>
+
+              <div class="selected-strip">
+                <div class="model-meta">
+                  <strong>当前对比组合</strong>
+                  <span class="muted-small">超出 3 个时将禁止继续勾选</span>
+                </div>
+                <div class="selected-list" id="selectedList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="insight-row">
+          <div class="metric-card">
+            <strong id="metricModels">3</strong>
+            <span>本轮参与模型</span>
+          </div>
+          <div class="metric-card">
+            <strong id="metricLatency">2.8s</strong>
+            <span>平均响应耗时</span>
+          </div>
+          <div class="metric-card">
+            <strong id="metricBest">Claude 3.5</strong>
+            <span>当前标记最佳答案</span>
+          </div>
+          <div class="metric-card">
+            <strong id="metricMode">三栏对比</strong>
+            <span>当前查看模式</span>
+          </div>
+        </section>
+
+        <section class="compare-stage">
+          <div class="compare-header">
+            <div>
+              <h3>结果对比区</h3>
+              <p class="subtitle">统一分栏比较结构完整度、可执行性和表达风格。每列都支持复制、设为最佳和继续追问。</p>
+            </div>
+            <div class="badge-row">
+              <span class="badge">可点击</span>
+              <span class="badge">多轮追问</span>
+              <span class="badge">结果收藏</span>
+            </div>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <h3>先选择 1-3 个模型，再点击“开始对比”</h3>
+            <p>生成后会以桌面端三栏布局展示结果；你也可以切换到列表模式做纵向精读。</p>
+          </div>
+
+          <div id="compareGrid" class="compare-grid" hidden></div>
+        </section>
+
+        <section class="history-panel">
+          <div class="panel-header">
+            <div>
+              <h3>历史记录区</h3>
+              <p class="subtitle">查看之前做过的对比任务，一键恢复同样的模型组合和输入。</p>
+            </div>
+            <div class="history-actions">
+              <button class="ghost-btn" id="clearHistoryBtn">清空历史</button>
+            </div>
+          </div>
+
+          <div class="history-table" id="historyTable"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const models = [
+      { id: "gpt4o", name: "GPT-4o", provider: "OpenAI", pool: "overseas", speed: "快", cost: "高", tags: ["推理", "写作"], avatar: "avatar-openai" },
+      { id: "claude35", name: "Claude 3.5", provider: "Anthropic", pool: "overseas", speed: "中", cost: "高", tags: ["长文", "策略"], avatar: "avatar-anthropic" },
+      { id: "gemini15", name: "Gemini 1.5", provider: "Google", pool: "overseas", speed: "中", cost: "中", tags: ["多模态", "检索"], avatar: "avatar-google" },
+      { id: "deepseek", name: "DeepSeek", provider: "DeepSeek", pool: "domestic", speed: "快", cost: "低", tags: ["中文", "代码"], avatar: "avatar-deepseek" },
+      { id: "kimi", name: "Kimi", provider: "Moonshot", pool: "domestic", speed: "中", cost: "中", tags: ["长上下文", "总结"], avatar: "avatar-moonshot" },
+      { id: "wenxin", name: "文心一言", provider: "百度", pool: "domestic", speed: "中", cost: "中", tags: ["中文", "企业"], avatar: "avatar-baidu" },
+      { id: "tongyi", name: "通义千问", provider: "阿里云", pool: "domestic", speed: "快", cost: "中", tags: ["中文", "业务"], avatar: "avatar-alibaba" }
+    ];
+
+    const state = {
+      activePool: "all",
+      selectedIds: ["gpt4o", "claude35", "deepseek"],
+      viewMode: "grid",
+      bestModelId: "claude35",
+      history: [
+        {
+          id: "h1",
+          title: "企业采购 AI 首页方案",
+          prompt: "请帮我输出一版面向企业采购场景的 AI 助手首页方案，包含导航、功能区、价格区和行动按钮，并说明为什么这样设计。",
+          models: ["gpt4o", "claude35", "deepseek"],
+          time: "今天 16:20"
+        },
+        {
+          id: "h2",
+          title: "生成增长活动落地页",
+          prompt: "请生成一版 SaaS 活动落地页的页面结构，并给出核心 CTA 与转化路径。",
+          models: ["gpt4o", "kimi", "tongyi"],
+          time: "今天 14:05"
+        },
+        {
+          id: "h3",
+          title: "客服助手对话策略",
+          prompt: "请为智能客服系统设计一套多轮对话应答策略，覆盖问答、转人工、总结和升级。",
+          models: ["claude35", "gemini15", "deepseek"],
+          time: "昨天 20:48"
+        }
+      ],
+      runSeed: 0,
+      results: []
+    };
+
+    const promptInput = document.getElementById("promptInput");
+    const promptCount = document.getElementById("promptCount");
+    const modelGrid = document.getElementById("modelGrid");
+    const selectedList = document.getElementById("selectedList");
+    const selectedCountBadge = document.getElementById("selectedCountBadge");
+    const compareGrid = document.getElementById("compareGrid");
+    const emptyState = document.getElementById("emptyState");
+    const historyList = document.getElementById("historyList");
+    const historyTable = document.getElementById("historyTable");
+    const toast = document.getElementById("toast");
+
+    const metricModels = document.getElementById("metricModels");
+    const metricLatency = document.getElementById("metricLatency");
+    const metricBest = document.getElementById("metricBest");
+    const metricMode = document.getElementById("metricMode");
+
+    const examples = [
+      "请为一款面向采购经理的 AI 工作台设计首页，要求强调效率、可追踪性和大模型对比能力。",
+      "请输出一版适合 B 端客户的产品官网结构，要求有价值主张、解决方案、客户案例和联系销售。",
+      "请从产品经理视角，为多模型对比平台设计首屏信息架构和 CTA 文案。"
+    ];
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function getModel(id) {
+      return models.find((item) => item.id === id);
+    }
+
+    function renderPromptCount() {
+      promptCount.textContent = promptInput.value.length;
+    }
+
+    function renderModelGrid() {
+      const selectedCount = state.selectedIds.length;
+      const poolModels = models.filter((model) => state.activePool === "all" || model.pool === state.activePool);
+      modelGrid.innerHTML = poolModels.map((model) => {
+        const selected = state.selectedIds.includes(model.id);
+        const disabled = !selected && selectedCount >= 3;
+        return `
+          <button class="model-option ${selected ? "selected" : ""} ${disabled ? "disabled" : ""}" data-model-id="${model.id}">
+            <div class="model-name">${model.name}</div>
+            <div class="model-desc">${model.provider} · ${model.pool === "domestic" ? "国内模型" : "国外模型"}</div>
+            <div class="pill-row">
+              <span class="mini-pill">速度 ${model.speed}</span>
+              <span class="mini-pill">成本 ${model.cost}</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+
+      modelGrid.querySelectorAll("[data-model-id]").forEach((button) => {
+        button.addEventListener("click", () => toggleModel(button.dataset.modelId));
+      });
+
+      selectedCountBadge.textContent = `已选 ${state.selectedIds.length} / 3`;
+      metricModels.textContent = String(state.selectedIds.length);
+    }
+
+    function renderSelectedList() {
+      selectedList.innerHTML = state.selectedIds.map((id) => {
+        const model = getModel(id);
+        return `
+          <div class="selected-chip">
+            <span>${model.name}</span>
+            <button data-remove-id="${model.id}" title="移除">×</button>
+          </div>
+        `;
+      }).join("");
+
+      selectedList.querySelectorAll("[data-remove-id]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          toggleModel(button.dataset.removeId);
+        });
+      });
+    }
+
+    function renderPoolTabs() {
+      document.querySelectorAll("#poolTabs .seg-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.pool === state.activePool);
+      });
+    }
+
+    function toggleModel(id) {
+      const exists = state.selectedIds.includes(id);
+      if (exists) {
+        state.selectedIds = state.selectedIds.filter((item) => item !== id);
+      } else {
+        if (state.selectedIds.length >= 3) {
+          showToast("一次最多选择 3 个模型");
+          return;
+        }
+        state.selectedIds.push(id);
+      }
+
+      if (!state.selectedIds.length) {
+        state.bestModelId = "";
+      } else if (!state.selectedIds.includes(state.bestModelId)) {
+        state.bestModelId = state.selectedIds[0];
+      }
+
+      renderModelGrid();
+      renderSelectedList();
+      renderMetrics();
+      renderCompare();
+    }
+
+    function createMockResult(model, prompt, index) {
+      const shortPrompt = prompt.length > 28 ? prompt.slice(0, 28) + "..." : prompt;
+      const profiles = {
+        gpt4o: {
+          summary: ["结构完整", "商业表达平衡", "适合作为基准稿"],
+          response:
+`建议把页面拆成 5 个层级：顶部导航、价值主张 Hero、核心能力区、对比优势区和行动转化区。
+
+1. Hero 区需要一句非常明确的价值主张：“同一问题，一次看懂多个模型答案”。
+2. 中段能力区突出三件事：多模型并行、结果横向比较、继续追问。
+3. 底部建议增加企业信任模块，如安全、日志、权限与 API 接入说明。
+
+如果目标用户是企业采购方，我会把 CTA 设计成“双按钮”：
+- 立即试用
+- 预约演示
+
+整体视觉建议克制、专业、偏中性商务风。`,
+          diff: ["适合当基准版本", "文案稳定，风险较低", "可直接转成页面线框"]
+        },
+        claude35: {
+          summary: ["论证最完整", "强调用户动线", "策略感更强"],
+          response:
+`我建议把该页面理解成“比较工作台”，而不是普通聊天页。
+
+核心原因是：用户进入页面的第一诉求不是聊天，而是判断哪个模型更适合当前任务。因此信息架构应围绕“比较决策”展开，而不是围绕“单模型对话”展开。
+
+推荐布局：
+1. 首屏上半区：输入问题 + 选择最多 3 个模型。
+2. 首屏下半区：三栏结果并列展示，每列固定宽度，保证阅读公平性。
+3. 每列底部提供“复制答案”“继续追问”“设为最佳”。
+
+文案上建议强调：
+- 节省试错时间
+- 降低切换成本
+- 用同一道题快速判断模型差异`,
+          diff: ["最适合做产品方案", "用户动线清晰", "适合产品经理和设计评审"]
+        },
+        gemini15: {
+          summary: ["多模态意识强", "偏平台表达", "适合扩展搜索能力"],
+          response:
+`如果产品后续会扩展图片、网页、PDF 等输入，我建议首页先给用户传达“统一输入，多模型分发”的平台能力。
+
+可以将能力模块设计为：
+- 文本问题并发发送
+- 文件资料统一解析
+- 结果按模型分栏展示
+- 差异点自动总结
+
+视觉上可以更偏平台型产品，减少营销化表达，增加“工作流”和“可追踪”的感觉。`,
+          diff: ["更适合平台路线", "对多模态扩展有帮助", "商业转化表达略弱"]
+        },
+        deepseek: {
+          summary: ["中文直接", "执行感强", "适合快速产出页面结构"],
+          response:
+`针对“${shortPrompt}”这个需求，我建议页面直接采用企业产品工作台风格。
+
+页面模块可这样排：
+1. 顶部导航：Logo、工作台、历史记录、模型管理。
+2. 中部输入区：大输入框 + 最多选 3 个模型。
+3. 下部结果区：三列卡片展示答案，支持收藏、复制、继续问。
+4. 右下角浮层：导出对比记录、生成总结。
+
+这样做的好处是非常直接，用户一眼就能理解产品价值，也方便后续扩展历史记录、团队共享和 API 接入。`,
+          diff: ["适合快速落地", "中文描述直白", "适合作为研发需求输入"]
+        },
+        kimi: {
+          summary: ["长文本友好", "总结能力好", "适合做对比摘要"],
+          response:
+`如果希望页面更适合中文办公用户，我建议在三栏结果之外，再增加一个“AI 总结”辅助区。
+
+这个区不替代三栏，而是在三栏下方总结：
+- 哪个模型更适合写方案
+- 哪个模型更适合出文案
+- 哪个模型更适合出结构稿
+
+这样可以让不想逐条细看的用户更快做决策。`,
+          diff: ["适合加总结模块", "适合办公人群", "主工作台本身不如 Claude 完整"]
+        },
+        wenxin: {
+          summary: ["企业感更强", "中文正式", "偏 B 端表述"],
+          response:
+`该页面建议采用偏企业软件的设计语言，突出安全、权限和接入能力。
+
+如果目标客户包含大企业采购与信息化部门，可以在首屏或第二屏补充：
+- 数据不落库
+- 企业权限控制
+- 模型使用日志
+- API / 私有化接入说明
+
+这样会明显提升 B 端客户信任感。`,
+          diff: ["更适合 B 端销售场景", "信任模块建议明显", "创意表达略保守"]
+        },
+        tongyi: {
+          summary: ["业务导向清晰", "适合商业化表达", "强调转化与成交"],
+          response:
+`首页建议突出三件事：
+一是省时，二是省钱，三是降低决策风险。
+
+可将卖点写成：
+- 不再手动切换多个模型
+- 一次生成，立即对比
+- 让团队更快选出最优答案
+
+在 CTA 上，建议首屏直接放“立即开始免费对比”，第二按钮是“查看企业版能力”。`,
+          diff: ["适合营销页", "更偏商业转化", "对工作台交互细节较少"]
+        }
+      };
+
+      const profile = profiles[model.id] || profiles.gpt4o;
+      return {
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        avatar: model.avatar,
+        summary: profile.summary,
+        response: profile.response,
+        diff: profile.diff,
+        latency: `${(2.1 + index * 0.4 + (state.runSeed % 3) * 0.3).toFixed(1)}s`,
+        tokens: 700 + index * 110 + state.runSeed * 20,
+        score: 90 - index * 4,
+        status: state.runSeed % 5 === 2 && index === 2 ? "error" : "success"
+      };
+    }
+
+    function renderCompare() {
+      if (!state.results.length || !state.selectedIds.length) {
+        emptyState.hidden = false;
+        compareGrid.hidden = true;
+        compareGrid.innerHTML = "";
+        return;
+      }
+
+      emptyState.hidden = true;
+      compareGrid.hidden = false;
+      compareGrid.classList.toggle("list-mode", state.viewMode === "list");
+
+      compareGrid.innerHTML = state.results.map((result) => {
+        const best = state.bestModelId === result.id;
+        const statusClass = result.status === "error" ? "error" : "success";
+        return `
+          <article class="result-card">
+            <div class="result-head">
+              <div class="model-left">
+                <div class="model-avatar ${result.avatar}">${result.name.slice(0, 1)}</div>
+                <div>
+                  <h4>${result.name}</h4>
+                  <p>${result.provider}</p>
+                </div>
+              </div>
+              <div class="status ${statusClass}">
+                ${result.status === "error" ? "请求失败" : `完成 · ${result.latency}`}
+              </div>
+            </div>
+
+            <div class="result-body">
+              ${
+                result.status === "error"
+                  ? `
+                    <div class="error-box">
+                      当前模型本轮返回失败，可能是超时或并发受限。你可以单独重试该模型，或替换成其他模型继续比较。
+                    </div>
+                  `
+                  : `
+                    <div class="summary-box">
+                      <div class="box-label">优势摘要</div>
+                      <ul>${result.summary.map((item) => `<li>${item}</li>`).join("")}</ul>
+                    </div>
+                    <div class="response-box">
+                      <div class="box-label">模型回答</div>
+                      <div class="content">${result.response}</div>
+                    </div>
+                    <div class="diff-box">
+                      <div class="box-label">适合场景</div>
+                      <ul>${result.diff.map((item) => `<li>${item}</li>`).join("")}</ul>
+                    </div>
+                  `
+              }
+            </div>
+
+            <div class="result-footer">
+              <div class="toolbar-actions">
+                <div class="muted-small">得分 ${result.score} · Token ${result.tokens}</div>
+                <div class="result-tools">
+                  <button class="small-btn" data-copy-id="${result.id}">复制</button>
+                  <button class="small-btn ${best ? "best" : ""}" data-best-id="${result.id}">
+                    ${best ? "已设为最佳" : "设为最佳"}
+                  </button>
+                  <button class="small-btn primary" data-retry-id="${result.id}">
+                    ${result.status === "error" ? "重试" : "继续问"}
+                  </button>
+                </div>
+              </div>
+              <div class="followup-bar">
+                <input class="followup-input" data-followup-input="${result.id}" placeholder="继续追问 ${result.name}，例如：把这个方案改成更偏 B 端风格" />
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      compareGrid.querySelectorAll("[data-copy-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const result = state.results.find((item) => item.id === btn.dataset.copyId);
+          navigator.clipboard.writeText(result.response || "").then(() => showToast(`已复制 ${result.name} 的结果`));
+        });
+      });
+
+      compareGrid.querySelectorAll("[data-best-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.bestModelId = btn.dataset.bestId;
+          renderMetrics();
+          renderCompare();
+        });
+      });
+
+      compareGrid.querySelectorAll("[data-retry-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const result = state.results.find((item) => item.id === btn.dataset.retryId);
+          if (result.status === "error") {
+            result.status = "success";
+            result.latency = "3.4s";
+            result.score = 84;
+            result.response = "重试成功后返回结果：建议保留三栏结构，但将首屏文案改得更强调“节省切换时间”和“降低对比成本”，并增加企业可信说明模块。";
+            result.summary = ["重试成功", "输出更短", "适合快速浏览"];
+            result.diff = ["可用于补充版本", "信息量中等"];
+            renderCompare();
+            renderMetrics();
+            showToast(`已重试 ${result.name}`);
+          } else {
+            const input = compareGrid.querySelector(`[data-followup-input="${result.id}"]`);
+            const followupText = input && input.value.trim() ? input.value.trim() : `请基于上一版答案，继续优化 ${result.name} 方案`;
+            result.response += `\n\n继续追问：${followupText}\n\n补充建议：保留原有信息架构，在 Hero 区强化对比价值，在结果区加入“最佳答案”显性标识和“AI 总结”模块。`;
+            result.score += 1;
+            renderCompare();
+            showToast(`已继续追问 ${result.name}`);
+          }
+        });
+      });
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = state.history.slice(0, 3).map((item, index) => `
+        <div class="history-item ${index === 0 ? "active" : ""}" data-history-id="${item.id}">
+          <h4>${item.title}</h4>
+          <p>${item.time} · ${item.models.map((id) => getModel(id)?.name).join(" / ")}</p>
+        </div>
+      `).join("");
+
+      historyTable.innerHTML = `
+        <div class="history-row head">
+          <div>任务</div>
+          <div>模型组合</div>
+          <div>时间</div>
+          <div>操作</div>
+        </div>
+        ${state.history.map((item) => `
+          <div class="history-row">
+            <div>${item.title}</div>
+            <div>${item.models.map((id) => getModel(id)?.name).join(" / ")}</div>
+            <div>${item.time}</div>
+            <div><button class="small-btn" data-restore-id="${item.id}">恢复</button></div>
+          </div>
+        `).join("")}
+      `;
+
+      document.querySelectorAll("[data-history-id], [data-restore-id]").forEach((btn) => {
+        btn.addEventListener("click", () => restoreHistory(btn.dataset.historyId || btn.dataset.restoreId));
+      });
+    }
+
+    function restoreHistory(id) {
+      const item = state.history.find((entry) => entry.id === id);
+      if (!item) return;
+      promptInput.value = item.prompt;
+      state.selectedIds = [...item.models];
+      state.bestModelId = item.models[0];
+      renderPromptCount();
+      renderModelGrid();
+      renderSelectedList();
+      renderMetrics();
+      runComparison(false);
+      showToast(`已恢复历史任务：${item.title}`);
+    }
+
+    function renderMetrics() {
+      metricModels.textContent = String(state.selectedIds.length);
+      metricMode.textContent = state.viewMode === "grid" ? "三栏对比" : "列表阅读";
+      const best = getModel(state.bestModelId);
+      metricBest.textContent = best ? best.name : "-";
+
+      const validResults = state.results.filter((item) => item.status === "success");
+      if (!validResults.length) {
+        metricLatency.textContent = "-";
+        return;
+      }
+      const avg = validResults
+        .map((item) => Number(item.latency.replace("s", "")))
+        .reduce((sum, value) => sum + value, 0) / validResults.length;
+      metricLatency.textContent = `${avg.toFixed(1)}s`;
+    }
+
+    function runComparison(addToHistory = true) {
+      const prompt = promptInput.value.trim();
+      if (!prompt) {
+        showToast("请先输入问题或 Prompt");
+        return;
+      }
+      if (!state.selectedIds.length) {
+        showToast("请至少选择 1 个模型");
+        return;
+      }
+
+      state.runSeed += 1;
+      state.results = state.selectedIds.map((id, index) => createMockResult(getModel(id), prompt, index));
+
+      if (addToHistory) {
+        state.history.unshift({
+          id: `h${Date.now()}`,
+          title: prompt.slice(0, 16) + (prompt.length > 16 ? "..." : ""),
+          prompt,
+          models: [...state.selectedIds],
+          time: "刚刚"
+        });
+        state.history = state.history.slice(0, 6);
+      }
+
+      renderCompare();
+      renderHistory();
+      renderMetrics();
+      showToast("已生成多模型对比结果");
+    }
+
+    function bindEvents() {
+      promptInput.addEventListener("input", renderPromptCount);
+
+      document.getElementById("runBtn").addEventListener("click", () => runComparison(true));
+      document.getElementById("fillExampleBtn").addEventListener("click", () => {
+        const next = examples[state.runSeed % examples.length];
+        promptInput.value = next;
+        renderPromptCount();
+      });
+
+      document.querySelectorAll("#poolTabs .seg-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.activePool = btn.dataset.pool;
+          renderPoolTabs();
+          renderModelGrid();
+        });
+      });
+
+      document.querySelectorAll(".view-switch .switch-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.viewMode = btn.dataset.view;
+          document.querySelectorAll(".view-switch .switch-btn").forEach((item) => item.classList.toggle("active", item === btn));
+          renderMetrics();
+          renderCompare();
+        });
+      });
+
+      document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+        state.history = [];
+        renderHistory();
+        showToast("历史记录已清空");
+      });
+    }
+
+    function bootstrap() {
+      renderPromptCount();
+      renderPoolTabs();
+      renderModelGrid();
+      renderSelectedList();
+      renderHistory();
+      renderMetrics();
+      runComparison(false);
+      bindEvents();
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

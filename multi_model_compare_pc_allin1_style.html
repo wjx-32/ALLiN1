@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALLiN1 Style - 多模型对比工作台</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --line: #e5e7eb;
+      --line-strong: #d7deea;
+      --text: #0f172a;
+      --subtext: #64748b;
+      --muted: #94a3b8;
+      --brand: #2563eb;
+      --brand-soft: #eff6ff;
+      --brand-strong: #1d4ed8;
+      --success: #16a34a;
+      --success-soft: #f0fdf4;
+      --warning: #d97706;
+      --warning-soft: #fff7ed;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      background: none;
+    }
+
+    .topbar {
+      height: 62px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .brand-wrap,
+    .nav-row,
+    .top-actions,
+    .composer-actions,
+    .toolbar,
+    .result-meta,
+    .card-actions,
+    .follow-bar,
+    .chips {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-wrap {
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #111827, #2563eb);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 16px;
+      line-height: 1.1;
+      margin-bottom: 3px;
+    }
+
+    .brand-copy span {
+      color: var(--subtext);
+      font-size: 12px;
+    }
+
+    .nav-pill,
+    .small-ghost,
+    .view-btn,
+    .pool-btn,
+    .tool-btn,
+    .action-btn {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 12px;
+      transition: 0.2s ease;
+      border: 1px solid transparent;
+      color: var(--subtext);
+      background: transparent;
+    }
+
+    .nav-pill.active,
+    .view-btn.active,
+    .pool-btn.active {
+      background: var(--brand-soft);
+      color: var(--brand);
+      border-color: #bfdbfe;
+      font-weight: 600;
+    }
+
+    .top-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--subtext);
+    }
+
+    .app {
+      flex: 1;
+      overflow: auto;
+      padding: 22px 24px 28px;
+    }
+
+    .container {
+      max-width: 1560px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .composer,
+    .result-stage,
+    .history-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .composer {
+      padding: 18px;
+    }
+
+    .composer-head,
+    .result-head,
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--subtext);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--subtext);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.blue {
+      background: var(--brand-soft);
+      color: var(--brand);
+      border-color: #bfdbfe;
+    }
+
+    .badge.green {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: #bbf7d0;
+    }
+
+    .prompt-shell {
+      border: 1px solid var(--line-strong);
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+    }
+
+    .prompt-shell textarea {
+      width: 100%;
+      min-height: 150px;
+      border: 0;
+      outline: 0;
+      resize: vertical;
+      background: transparent;
+      padding: 18px 18px 12px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .prompt-footer {
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
+      padding: 12px 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .helper {
+      color: var(--subtext);
+      font-size: 13px;
+    }
+
+    .counter {
+      color: var(--subtext);
+      font-size: 12px;
+    }
+
+    .action-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      height: 40px;
+      padding: 0 16px;
+    }
+
+    .action-btn.primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    .action-btn.primary:hover {
+      background: var(--brand-strong);
+      border-color: var(--brand-strong);
+    }
+
+    .action-btn.primary:disabled {
+      background: #93c5fd;
+      border-color: #93c5fd;
+      cursor: not-allowed;
+    }
+
+    .selection-row {
+      display: grid;
+      gap: 12px;
+      padding-top: 2px;
+    }
+
+    .pools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pool-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .model-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .model-chip {
+      min-width: 196px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+      text-align: left;
+      transition: 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .model-chip:hover {
+      transform: translateY(-1px);
+      border-color: #cbd5e1;
+    }
+
+    .model-chip.selected {
+      background: var(--brand-soft);
+      border-color: #93c5fd;
+    }
+
+    .model-chip.disabled {
+      opacity: 0.45;
+    }
+
+    .model-chip .name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .model-chip .meta {
+      color: var(--subtext);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .mini-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .mini-pill {
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      color: var(--subtext);
+      font-size: 11px;
+    }
+
+    .selected-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      border-top: 1px dashed var(--line-strong);
+      padding-top: 12px;
+    }
+
+    .selected-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .selected-chip {
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .selected-chip button {
+      color: var(--subtext);
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .result-stage {
+      padding: 18px;
+    }
+
+    .toolbar {
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .metric {
+      font-size: 13px;
+      color: var(--subtext);
+      padding: 0 10px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .compare-grid.list {
+      grid-template-columns: 1fr;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--line-strong);
+      background: #fbfdff;
+      border-radius: 20px;
+      padding: 54px 24px;
+      text-align: center;
+      color: var(--subtext);
+    }
+
+    .result-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      min-height: 640px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fcfdff;
+    }
+
+    .model-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .avatar-openai { background: #111827; }
+    .avatar-anthropic { background: #d97706; }
+    .avatar-google { background: #2563eb; }
+    .avatar-moonshot { background: #7c3aed; }
+    .avatar-deepseek { background: #0f766e; }
+    .avatar-baidu { background: #2563eb; }
+    .avatar-alibaba { background: #ea580c; }
+
+    .model-title {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+
+    .model-provider {
+      margin: 0;
+      font-size: 12px;
+      color: var(--subtext);
+    }
+
+    .status {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+
+    .status.success {
+      color: var(--success);
+      background: var(--success-soft);
+      border-color: #bbf7d0;
+    }
+
+    .status.error {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: #fecaca;
+    }
+
+    .card-body {
+      flex: 1;
+      overflow: auto;
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card-box {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 15px;
+      background: #fff;
+    }
+
+    .box-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .content {
+      color: #1f2937;
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+
+    .card-box ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--subtext);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .error-box {
+      border: 1px dashed #fecaca;
+      border-radius: 16px;
+      background: #fff8f8;
+      color: var(--danger);
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 16px;
+    }
+
+    .card-footer {
+      border-top: 1px solid var(--line);
+      background: #fcfdff;
+      padding: 14px 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .result-meta {
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .meta-note {
+      font-size: 12px;
+      color: var(--subtext);
+    }
+
+    .tool-btn,
+    .small-ghost {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 12px;
+    }
+
+    .tool-btn.primary {
+      background: var(--brand-soft);
+      color: var(--brand);
+      border-color: #bfdbfe;
+    }
+
+    .tool-btn.best {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+
+    .follow-input {
+      width: 100%;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 0 12px;
+      outline: 0;
+    }
+
+    .history-panel {
+      padding: 18px;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .history-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      background: #fff;
+      transition: 0.2s ease;
+      cursor: pointer;
+    }
+
+    .history-card:hover {
+      transform: translateY(-1px);
+      border-color: #cbd5e1;
+    }
+
+    .history-card h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .history-card p {
+      margin: 0;
+      color: var(--subtext);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: #111827;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 1280px) {
+      .compare-grid,
+      .history-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast"></div>
+
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-logo">A</div>
+      <div class="brand-copy">
+        <strong>ALLiN1 Style</strong>
+        <span>聚合多个 AI 大模型，对比输出结果</span>
+      </div>
+      <div class="nav-row">
+        <button class="nav-pill active">多模型对比</button>
+        <button class="nav-pill">提示词库</button>
+        <button class="nav-pill">历史记录</button>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="top-icon" title="通知">◌</button>
+      <button class="top-icon" title="设置">⚙</button>
+      <button class="top-icon" title="账户">U</button>
+    </div>
+  </header>
+
+  <main class="app">
+    <div class="container">
+      <section class="composer">
+        <div class="composer-head">
+          <div>
+            <h1 class="title">多模型并行对比工作台</h1>
+            <p class="subtitle">参考 `ALLiN1` 的结构样式，采用顶部大输入区 + 横向模型选择 + 下方三栏结果对比的工作台布局，同时保留你要的“最多选择 3 个模型”规则。</p>
+          </div>
+          <div class="chips">
+            <span class="badge blue">国内 / 国外模型池</span>
+            <span class="badge green">单次最多 3 个</span>
+          </div>
+        </div>
+
+        <div class="prompt-shell">
+          <textarea id="promptInput" placeholder="输入你的问题或 Prompt，例如：请为一款面向企业采购场景的 AI 工作台设计首页结构，要求突出多模型对比、效率提升和团队协作。">请为一款面向企业采购场景的 AI 工作台设计首页结构，要求突出多模型对比、效率提升和团队协作。</textarea>
+          <div class="prompt-footer">
+            <div class="footer-row">
+              <div class="helper">同一问题并行发给多个模型，结果按列对齐展示，适合横向比较与继续追问。</div>
+              <div class="composer-actions">
+                <span class="counter"><span id="promptCount">0</span> / 4000</span>
+                <button class="action-btn" id="fillBtn">换一个示例</button>
+                <button class="action-btn primary" id="runBtn">开始对比</button>
+              </div>
+            </div>
+
+            <div class="selection-row">
+              <div class="footer-row">
+                <div class="pools" id="poolTabs">
+                  <button class="pool-btn active" data-pool="all">全部模型</button>
+                  <button class="pool-btn" data-pool="overseas">国外模型</button>
+                  <button class="pool-btn" data-pool="domestic">国内模型</button>
+                </div>
+                <div class="chips">
+                  <span class="badge blue" id="selectedBadge">已选 0 / 3</span>
+                </div>
+              </div>
+
+              <div class="model-strip" id="modelStrip"></div>
+
+              <div class="selected-bar">
+                <div class="selected-group">
+                  <strong>当前组合</strong>
+                  <div class="selected-group" id="selectedList"></div>
+                </div>
+                <div class="helper">桌面端默认 3 栏并排；也可以切换为列表阅读。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="result-stage">
+        <div class="result-head">
+          <div>
+            <h2 class="title" style="font-size: 18px;">结果对比</h2>
+            <p class="subtitle">结果区参考 `ALLiN1 - 聚合多个AI大模型，对比输出结果` 的工作台结构，强调同屏查看、多列比较和可继续追问。[参考链接](https://allin1.rjmart.cn/)</p>
+          </div>
+          <div class="chips">
+            <button class="view-btn active" data-view="grid">三栏</button>
+            <button class="view-btn" data-view="list">列表</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <span class="metric">本轮模型数: <strong id="metricModels" style="margin-left:6px;">3</strong></span>
+            <span class="metric">平均耗时: <strong id="metricLatency" style="margin-left:6px;">2.7s</strong></span>
+            <span class="metric">最佳答案: <strong id="metricBest" style="margin-left:6px;">Claude 3.5</strong></span>
+          </div>
+          <div class="toolbar-right">
+            <button class="small-ghost" id="summaryBtn">生成差异总结</button>
+            <button class="small-ghost" id="clearBtn">清空结果</button>
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          先选择 1 到 3 个模型，然后点击“开始对比”。
+        </div>
+
+        <div id="compareGrid" class="compare-grid" hidden></div>
+      </section>
+
+      <section class="history-panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="title" style="font-size: 18px;">最近对比</h2>
+            <p class="subtitle">保留轻量历史区，但不做左侧栏，避免打断 `ALLiN1` 风格的主工作台结构。</p>
+          </div>
+          <button class="small-ghost" id="clearHistoryBtn">清空历史</button>
+        </div>
+        <div class="history-grid" id="historyGrid"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const models = [
+      { id: "gpt4o", name: "GPT-4o", provider: "OpenAI", pool: "overseas", speed: "快", cost: "高", tags: ["推理", "写作"], avatar: "avatar-openai" },
+      { id: "claude35", name: "Claude 3.5", provider: "Anthropic", pool: "overseas", speed: "中", cost: "高", tags: ["方案", "策略"], avatar: "avatar-anthropic" },
+      { id: "gemini15", name: "Gemini 1.5", provider: "Google", pool: "overseas", speed: "中", cost: "中", tags: ["多模态", "检索"], avatar: "avatar-google" },
+      { id: "deepseek", name: "DeepSeek", provider: "DeepSeek", pool: "domestic", speed: "快", cost: "低", tags: ["中文", "代码"], avatar: "avatar-deepseek" },
+      { id: "kimi", name: "Kimi", provider: "Moonshot", pool: "domestic", speed: "中", cost: "中", tags: ["总结", "长文"], avatar: "avatar-moonshot" },
+      { id: "wenxin", name: "文心一言", provider: "百度", pool: "domestic", speed: "中", cost: "中", tags: ["中文", "企业"], avatar: "avatar-baidu" },
+      { id: "tongyi", name: "通义千问", provider: "阿里云", pool: "domestic", speed: "快", cost: "中", tags: ["业务", "营销"], avatar: "avatar-alibaba" }
+    ];
+
+    const state = {
+      activePool: "all",
+      selectedIds: ["gpt4o", "claude35", "deepseek"],
+      view: "grid",
+      bestId: "claude35",
+      runSeed: 0,
+      results: [],
+      history: [
+        {
+          id: "h1",
+          title: "企业采购工作台首页",
+          prompt: "请为一款面向企业采购场景的 AI 工作台设计首页结构，要求突出多模型对比、效率提升和团队协作。",
+          models: ["gpt4o", "claude35", "deepseek"],
+          time: "今天 16:20"
+        },
+        {
+          id: "h2",
+          title: "SaaS 落地页结构",
+          prompt: "请生成一版 SaaS 活动落地页的页面结构，并给出核心 CTA 与转化路径。",
+          models: ["gpt4o", "kimi", "tongyi"],
+          time: "今天 14:10"
+        },
+        {
+          id: "h3",
+          title: "客服助手策略",
+          prompt: "请为智能客服系统设计一套多轮对话应答策略，覆盖问答、转人工、总结和升级。",
+          models: ["claude35", "gemini15", "deepseek"],
+          time: "昨天 20:48"
+        }
+      ]
+    };
+
+    const promptInput = document.getElementById("promptInput");
+    const promptCount = document.getElementById("promptCount");
+    const modelStrip = document.getElementById("modelStrip");
+    const selectedList = document.getElementById("selectedList");
+    const selectedBadge = document.getElementById("selectedBadge");
+    const compareGrid = document.getElementById("compareGrid");
+    const emptyState = document.getElementById("emptyState");
+    const historyGrid = document.getElementById("historyGrid");
+    const toast = document.getElementById("toast");
+    const metricModels = document.getElementById("metricModels");
+    const metricLatency = document.getElementById("metricLatency");
+    const metricBest = document.getElementById("metricBest");
+
+    const examples = [
+      "请为一款面向企业采购场景的 AI 工作台设计首页结构，要求突出多模型对比、效率提升和团队协作。",
+      "请从产品经理视角设计一款多模型对比平台的首屏结构，强调工作台感和决策效率。",
+      "请生成一版 AI SaaS 官网首屏和功能区布局，要求突出多模型并行对比的价值。"
+    ];
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function getModel(id) {
+      return models.find((item) => item.id === id);
+    }
+
+    function updatePromptCount() {
+      promptCount.textContent = promptInput.value.length;
+    }
+
+    function renderPoolTabs() {
+      document.querySelectorAll("#poolTabs .pool-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.pool === state.activePool);
+      });
+    }
+
+    function renderModelStrip() {
+      const visible = models.filter((m) => state.activePool === "all" || m.pool === state.activePool);
+      modelStrip.innerHTML = visible.map((model) => {
+        const selected = state.selectedIds.includes(model.id);
+        const disabled = !selected && state.selectedIds.length >= 3;
+        return `
+          <button class="model-chip ${selected ? "selected" : ""} ${disabled ? "disabled" : ""}" data-model-id="${model.id}">
+            <div class="name">${model.name}</div>
+            <div class="meta">${model.provider} · ${model.pool === "domestic" ? "国内模型" : "国外模型"}</div>
+            <div class="mini-pills">
+              <span class="mini-pill">速度 ${model.speed}</span>
+              <span class="mini-pill">成本 ${model.cost}</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+
+      modelStrip.querySelectorAll("[data-model-id]").forEach((btn) => {
+        btn.addEventListener("click", () => toggleModel(btn.dataset.modelId));
+      });
+
+      selectedBadge.textContent = `已选 ${state.selectedIds.length} / 3`;
+      metricModels.textContent = String(state.selectedIds.length);
+    }
+
+    function renderSelectedList() {
+      selectedList.innerHTML = state.selectedIds.map((id) => {
+        const model = getModel(id);
+        return `
+          <span class="selected-chip">
+            ${model.name}
+            <button data-remove-id="${id}">×</button>
+          </span>
+        `;
+      }).join("");
+
+      selectedList.querySelectorAll("[data-remove-id]").forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          toggleModel(btn.dataset.removeId);
+        });
+      });
+    }
+
+    function toggleModel(id) {
+      const exists = state.selectedIds.includes(id);
+      if (exists) {
+        state.selectedIds = state.selectedIds.filter((item) => item !== id);
+      } else {
+        if (state.selectedIds.length >= 3) {
+          showToast("最多只能同时选择 3 个模型");
+          return;
+        }
+        state.selectedIds.push(id);
+      }
+
+      if (!state.selectedIds.length) {
+        state.bestId = "";
+      } else if (!state.selectedIds.includes(state.bestId)) {
+        state.bestId = state.selectedIds[0];
+      }
+
+      renderModelStrip();
+      renderSelectedList();
+      renderMetrics();
+      renderResults();
+    }
+
+    function createResult(model, prompt, index) {
+      const shortPrompt = prompt.length > 24 ? prompt.slice(0, 24) + "..." : prompt;
+      const contentMap = {
+        gpt4o: {
+          summary: ["结构完整", "表达平衡", "适合作为基准稿"],
+          response:
+`建议将页面拆成四层：顶部导航、输入工作台、模型选择区、三栏结果区。
+
+1. 顶部导航保持极简，只放品牌、主要功能入口和用户操作。
+2. 输入区必须足够大，让用户一眼看出“这是用来发问题并进行模型比较”的地方。
+3. 模型选择不要放成复杂表单，而要做成横向卡片或标签式选择，更符合工作台节奏。
+4. 结果区默认三栏等宽，确保用户横向扫描时不会产生视觉偏差。
+
+这套结构最适合强调效率和决策感。`,
+          diff: ["适合作为基准结构", "适合继续做高保真页面", "整体风险最低"]
+        },
+        claude35: {
+          summary: ["策略感强", "最像产品方案", "用户动线最清晰"],
+          response:
+`如果参考 ALLiN1 的结构风格，核心应该不是“复杂后台”，而是“输入驱动的比较工作台”。
+
+因此首页最重要的不是侧栏，而是首屏中心区域：
+- 上层：输入框与发送动作
+- 中层：模型快速选择
+- 下层：结果并排展示
+
+用户打开页面后，应该在 3 秒内知道两件事：
+1. 这里可以一次比较多个模型
+2. 我只需要输入一个问题就能得到多个答案
+
+所以，视觉层次要让输入框最大、模型选择次之、结果区占据最大面积。`,
+          diff: ["最适合参考站点风格", "强调产品动线", "适合继续扩成正式设计稿"]
+        },
+        gemini15: {
+          summary: ["平台视角强", "适合扩多模态", "结构偏平台"],
+          response:
+`如果后续会加入图片、文件、网页等输入，当前工作台结构应保留统一输入入口。
+
+建议后续预埋三个位置：
+- 输入区左侧放上传入口
+- 结果区上方放视图切换
+- 结果区下方放自动总结和导出能力
+
+这样既能保持参考站点的简洁结构，又能兼顾未来扩展。`,
+          diff: ["适合中长期平台化", "扩展性好", "商业表达略弱"]
+        },
+        deepseek: {
+          summary: ["中文直接", "落地感强", "适合研发实现"],
+          response:
+`参考站点后，建议页面直接采用“中间工作台”的方式，不要再加左侧历史栏。
+
+原因很简单：
+1. 左侧栏会分散注意力
+2. 用户的主要任务是提问和比较
+3. 历史记录可以下沉到底部或二级页面
+
+对于“${shortPrompt}”这个问题，首屏只要把输入、模型和结果三件事讲清楚，页面就已经足够成立。`,
+          diff: ["适合快速实现", "更接近参考站点", "结构最克制"]
+        },
+        kimi: {
+          summary: ["长文友好", "总结意识强", "适合办公场景"],
+          response:
+`建议在结果区上方补一个“差异总结”按钮，由系统自动生成三列对比摘要：
+- 哪个模型结构最完整
+- 哪个模型更适合文案
+- 哪个模型更适合产品方案
+
+这样既保留了参考站点的并列展示结构，又能帮助用户更快做决策。`,
+          diff: ["适合加总结模块", "适合办公用户", "适合增强可读性"]
+        },
+        wenxin: {
+          summary: ["企业感强", "中文正式", "更偏 B 端表达"],
+          response:
+`如果目标用户偏企业客户，可以在首屏底部或次屏增加信任说明：
+- 数据安全
+- 团队协作
+- 模型使用权限
+- API 接入能力
+
+这样既不破坏参考站点的工作台布局，也能增强 B 端客户的信任感。`,
+          diff: ["适合企业版", "信任感更强", "首屏仍应保持克制"]
+        },
+        tongyi: {
+          summary: ["业务导向强", "营销转化清楚", "适合商业化表达"],
+          response:
+`首页文案建议突出三点：
+- 一次提问，多个模型同时返回
+- 不再手动切换平台
+- 更快选出最优答案
+
+首屏 CTA 应该只有一个主按钮：开始对比。这样最符合参考站点的工作台逻辑。`,
+          diff: ["适合营销转化", "文案直接", "交互层次略少"]
+        }
+      };
+
+      const profile = contentMap[model.id] || contentMap.gpt4o;
+      const failed = state.runSeed % 5 === 2 && index === 2;
+      return {
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        avatar: model.avatar,
+        summary: profile.summary,
+        response: profile.response,
+        diff: profile.diff,
+        latency: `${(2.2 + index * 0.4 + (state.runSeed % 3) * 0.3).toFixed(1)}s`,
+        tokens: 680 + index * 120 + state.runSeed * 20,
+        score: 91 - index * 4,
+        status: failed ? "error" : "success"
+      };
+    }
+
+    function renderResults() {
+      if (!state.results.length || !state.selectedIds.length) {
+        emptyState.hidden = false;
+        compareGrid.hidden = true;
+        compareGrid.innerHTML = "";
+        return;
+      }
+
+      emptyState.hidden = true;
+      compareGrid.hidden = false;
+      compareGrid.classList.toggle("list", state.view === "list");
+
+      compareGrid.innerHTML = state.results.map((result) => {
+        const best = result.id === state.bestId;
+        return `
+          <article class="result-card">
+            <div class="card-head">
+              <div class="model-info">
+                <div class="avatar ${result.avatar}">${result.name.slice(0, 1)}</div>
+                <div>
+                  <h3 class="model-title">${result.name}</h3>
+                  <p class="model-provider">${result.provider}</p>
+                </div>
+              </div>
+              <div class="status ${result.status === "error" ? "error" : "success"}">
+                ${result.status === "error" ? "请求失败" : `完成 · ${result.latency}`}
+              </div>
+            </div>
+
+            <div class="card-body">
+              ${
+                result.status === "error"
+                  ? `<div class="error-box">该模型本轮返回失败，可能是超时或并发受限。你可以单独重试该模型，或切换模型后重新对比。</div>`
+                  : `
+                    <div class="card-box">
+                      <div class="box-title">优势摘要</div>
+                      <ul>${result.summary.map((item) => `<li>${item}</li>`).join("")}</ul>
+                    </div>
+                    <div class="card-box">
+                      <div class="box-title">模型回答</div>
+                      <div class="content">${result.response}</div>
+                    </div>
+                    <div class="card-box">
+                      <div class="box-title">适合场景</div>
+                      <ul>${result.diff.map((item) => `<li>${item}</li>`).join("")}</ul>
+                    </div>
+                  `
+              }
+            </div>
+
+            <div class="card-footer">
+              <div class="result-meta">
+                <div class="meta-note">得分 ${result.score} · Token ${result.tokens}</div>
+                <div class="card-actions">
+                  <button class="tool-btn" data-copy-id="${result.id}">复制</button>
+                  <button class="tool-btn ${best ? "best" : ""}" data-best-id="${result.id}">
+                    ${best ? "已设最佳" : "设为最佳"}
+                  </button>
+                  <button class="tool-btn primary" data-action-id="${result.id}">
+                    ${result.status === "error" ? "重试" : "继续问"}
+                  </button>
+                </div>
+              </div>
+              <div class="follow-bar">
+                <input class="follow-input" data-followup-id="${result.id}" placeholder="继续追问 ${result.name}，例如：改成更偏企业软件风格" />
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      compareGrid.querySelectorAll("[data-copy-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const result = state.results.find((item) => item.id === btn.dataset.copyId);
+          navigator.clipboard.writeText(result.response || "").then(() => showToast(`已复制 ${result.name} 的结果`));
+        });
+      });
+
+      compareGrid.querySelectorAll("[data-best-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.bestId = btn.dataset.bestId;
+          renderMetrics();
+          renderResults();
+        });
+      });
+
+      compareGrid.querySelectorAll("[data-action-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const result = state.results.find((item) => item.id === btn.dataset.actionId);
+          if (result.status === "error") {
+            result.status = "success";
+            result.latency = "3.2s";
+            result.score = 84;
+            result.summary = ["重试成功", "输出更简洁", "适合补充参考"];
+            result.response = "重试成功后，建议继续保持顶部输入区 + 横向模型选择 + 下方三栏结果的结构，并将历史记录放到底部而不是左侧，以更贴近参考站点的工作台风格。";
+            result.diff = ["适合补充版本", "更贴近参考布局"];
+            renderResults();
+            renderMetrics();
+            showToast(`已重试 ${result.name}`);
+          } else {
+            const input = compareGrid.querySelector(`[data-followup-id="${result.id}"]`);
+            const text = input && input.value.trim() ? input.value.trim() : `请继续优化 ${result.name} 的方案`;
+            result.response += `\n\n继续追问：${text}\n\n补充建议：强化首屏输入区域，减少辅助信息干扰，让整个页面更像输入驱动的比较工作台。`;
+            result.score += 1;
+            renderResults();
+            showToast(`已继续追问 ${result.name}`);
+          }
+        });
+      });
+    }
+
+    function renderHistory() {
+      historyGrid.innerHTML = state.history.map((item) => `
+        <div class="history-card" data-history-id="${item.id}">
+          <h4>${item.title}</h4>
+          <p>${item.time}</p>
+          <p style="margin-top:8px;">${item.models.map((id) => getModel(id)?.name).join(" / ")}</p>
+        </div>
+      `).join("");
+
+      historyGrid.querySelectorAll("[data-history-id]").forEach((card) => {
+        card.addEventListener("click", () => restoreHistory(card.dataset.historyId));
+      });
+    }
+
+    function restoreHistory(id) {
+      const item = state.history.find((entry) => entry.id === id);
+      if (!item) return;
+      promptInput.value = item.prompt;
+      state.selectedIds = [...item.models];
+      state.bestId = item.models[0];
+      updatePromptCount();
+      renderModelStrip();
+      renderSelectedList();
+      runCompare(false);
+      showToast(`已恢复历史任务：${item.title}`);
+    }
+
+    function renderMetrics() {
+      metricModels.textContent = String(state.selectedIds.length);
+      const best = getModel(state.bestId);
+      metricBest.textContent = best ? best.name : "-";
+      const successResults = state.results.filter((item) => item.status === "success");
+      if (!successResults.length) {
+        metricLatency.textContent = "-";
+        return;
+      }
+      const avg = successResults.reduce((sum, item) => sum + Number(item.latency.replace("s", "")), 0) / successResults.length;
+      metricLatency.textContent = `${avg.toFixed(1)}s`;
+    }
+
+    function runCompare(addHistory = true) {
+      const prompt = promptInput.value.trim();
+      if (!prompt) {
+        showToast("请先输入问题或 Prompt");
+        return;
+      }
+      if (!state.selectedIds.length) {
+        showToast("请至少选择 1 个模型");
+        return;
+      }
+
+      state.runSeed += 1;
+      state.results = state.selectedIds.map((id, index) => createResult(getModel(id), prompt, index));
+
+      if (addHistory) {
+        state.history.unshift({
+          id: `h${Date.now()}`,
+          title: prompt.slice(0, 18) + (prompt.length > 18 ? "..." : ""),
+          prompt,
+          models: [...state.selectedIds],
+          time: "刚刚"
+        });
+        state.history = state.history.slice(0, 6);
+      }
+
+      renderResults();
+      renderHistory();
+      renderMetrics();
+      showToast("已生成多模型对比结果");
+    }
+
+    function bindEvents() {
+      promptInput.addEventListener("input", updatePromptCount);
+
+      document.getElementById("fillBtn").addEventListener("click", () => {
+        promptInput.value = examples[state.runSeed % examples.length];
+        updatePromptCount();
+      });
+
+      document.getElementById("runBtn").addEventListener("click", () => runCompare(true));
+
+      document.querySelectorAll("#poolTabs .pool-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.activePool = btn.dataset.pool;
+          renderPoolTabs();
+          renderModelStrip();
+        });
+      });
+
+      document.querySelectorAll("[data-view]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.view = btn.dataset.view;
+          document.querySelectorAll("[data-view]").forEach((item) => item.classList.toggle("active", item === btn));
+          renderResults();
+        });
+      });
+
+      document.getElementById("clearBtn").addEventListener("click", () => {
+        state.results = [];
+        renderResults();
+        renderMetrics();
+        showToast("已清空结果");
+      });
+
+      document.getElementById("summaryBtn").addEventListener("click", () => {
+        if (!state.results.length) {
+          showToast("请先生成结果");
+          return;
+        }
+        showToast("差异总结：Claude 更像产品方案，GPT 更均衡，DeepSeek 更偏快速落地");
+      });
+
+      document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+        state.history = [];
+        renderHistory();
+        showToast("历史记录已清空");
+      });
+    }
+
+    function bootstrap() {
+      updatePromptCount();
+      renderPoolTabs();
+      renderModelStrip();
+      renderSelectedList();
+      renderHistory();
+      runCompare(false);
+      bindEvents();
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

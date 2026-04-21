@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALLiN1 - 聚合多个AI大模型，对比输出结果</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- 引入 Inter 和 JetBrains Mono 字体提升质感 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* 优化的自定义滚动条 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* 防止 Alpine 闪烁 */
+    [x-cloak] { display: none !important; }
+    
+    /* 玻璃拟态效果 */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    
+    /* 打字机光标闪烁动画 */
+    @keyframes blink { 50% { opacity: 0; } }
+    .typing-cursor::after {
+      content: '|';
+      animation: blink 1s step-start infinite;
+      color: #3b82f6;
+      margin-left: 2px;
+    }
+    
+    /* 结果内容Markdown样式重置 */
+    .markdown-body p { margin-bottom: 0.75em; line-height: 1.6; }
+    .markdown-body p:last-child { margin-bottom: 0; }
+    .markdown-body strong { font-weight: 600; color: #111827; }
+    .markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
+    .markdown-body ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
+    .markdown-body blockquote { border-left: 3px solid #e5e7eb; padding-left: 1em; color: #6b7280; margin-bottom: 0.75em; }
+  </style>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+            dark: { 800: '#1f2937', 900: '#111827' }
+          },
+          boxShadow: {
+            'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+            'float': '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.01)'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#f8fafc] text-gray-800 h-screen flex flex-col overflow-hidden" x-data="allin1App()">
+
+  <!-- 顶部全局提示 (Toast) -->
+  <div class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 pointer-events-none" 
+       x-show="toast.show" 
+       x-transition:enter="ease-out duration-300"
+       x-transition:enter-start="opacity-0 -translate-y-4 scale-95"
+       x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+       x-transition:leave="ease-in duration-200"
+       x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+       x-transition:leave-end="opacity-0 -translate-y-4 scale-95"
+       x-cloak>
+    <div class="bg-gray-900 text-white px-5 py-3 rounded-xl shadow-float flex items-center space-x-3 text-[14px] font-medium border border-gray-700">
+      <i class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+      <span x-text="toast.message"></span>
+    </div>
+  </div>
+
+  <!-- 1. 顶部品牌与导航区 -->
+  <header class="glass-effect border-b border-gray-200 shrink-0 relative z-40 h-[60px]">
+    <div class="max-w-[1920px] mx-auto px-4 sm:px-6 w-full h-full flex items-center justify-between">
+      <!-- 左侧品牌区 -->
+      <div class="flex items-center space-x-8">
+        <a href="#" class="flex items-center space-x-2.5 group">
+          <div class="w-8 h-8 rounded-lg bg-dark-900 flex items-center justify-center shadow-sm group-hover:bg-primary-600 transition-colors">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
+            </svg>
+          </div>
+          <span class="text-[18px] font-bold text-dark-900 tracking-tight">ALLiN1</span>
+          <span class="bg-primary-50 text-primary-600 text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 uppercase border border-primary-100">Pro</span>
+        </a>
+        
+        <!-- 导航菜单 -->
+        <nav class="hidden md:flex space-x-1">
+          <a href="#" class="px-3 py-2 text-[14px] font-semibold text-primary-600 bg-primary-50/80 rounded-lg flex items-center">
+            <i class="fa-solid fa-layer-group mr-2 text-primary-500"></i>并行对比
+          </a>
+          <a href="#" class="px-3 py-2 text-[14px] font-medium text-gray-500 hover:text-dark-900 hover:bg-gray-100/80 rounded-lg transition-colors flex items-center">
+            <i class="fa-regular fa-compass mr-2"></i>提示词库
+          </a>
+          <a href="#" class="px-3 py-2 text-[14px] font-medium text-gray-500 hover:text-dark-900 hover:bg-gray-100/80 rounded-lg transition-colors flex items-center">
+            <i class="fa-solid fa-clock-rotate-left mr-2"></i>历史记录
+          </a>
+        </nav>
+      </div>
+
+      <!-- 右侧控制区 -->
+      <div class="flex items-center space-x-2">
+        <button class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:text-dark-900 hover:bg-gray-100 transition-colors" title="深色模式">
+          <i class="fa-regular fa-moon"></i>
+        </button>
+        <button class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:text-dark-900 hover:bg-gray-100 transition-colors relative" title="消息通知">
+          <i class="fa-regular fa-bell"></i>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+        </button>
+        <div class="w-px h-5 bg-gray-200 mx-2"></div>
+        <button class="flex items-center space-x-2 hover:bg-gray-100 p-1.5 rounded-lg transition-colors cursor-pointer pl-2">
+          <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&rounded=true" alt="Avatar" class="w-7 h-7 rounded-full shadow-sm">
+          <span class="text-[13px] font-medium text-gray-700 hidden sm:block">个人中心</span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 页面主体区域 -->
+  <main class="flex-1 overflow-hidden flex flex-col relative w-full">
+    
+    <!-- 2. 核心输入与参数配置区 (悬浮固定在顶部或随页面滚动，这里设计为固定在顶部，结果区在下方滚动) -->
+    <section class="shrink-0 bg-white border-b border-gray-200 shadow-sm z-30">
+      <div class="max-w-[1920px] mx-auto px-4 sm:px-6 py-5">
+        
+        <div class="flex flex-col xl:flex-row gap-5">
+          <!-- 左侧：输入框 -->
+          <div class="flex-1 relative flex flex-col">
+            <div class="relative group h-full">
+              <div class="absolute -inset-0.5 bg-gradient-to-r from-primary-400 to-indigo-500 rounded-xl blur opacity-0 group-focus-within:opacity-20 transition duration-500"></div>
+              <div class="relative bg-white rounded-xl border border-gray-300 group-focus-within:border-primary-500 shadow-sm transition-colors h-full flex flex-col overflow-hidden">
+                
+                <textarea 
+                  x-model="prompt"
+                  @keydown.cmd.enter.prevent="generate()"
+                  @keydown.ctrl.enter.prevent="generate()"
+                  class="w-full bg-transparent p-4 pb-12 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none resize-none flex-1 min-h-[110px] leading-relaxed"
+                  placeholder="输入提示词，按 Cmd/Ctrl + Enter 快速发送对比..."></textarea>
+                
+                <!-- 输入框内部底部工具栏 -->
+                <div class="absolute bottom-0 left-0 w-full p-2.5 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between backdrop-blur-sm">
+                  <div class="flex items-center space-x-1">
+                    <button class="w-8 h-8 rounded text-gray-500 hover:text-dark-900 hover:bg-gray-200 transition-colors flex items-center justify-center" title="上传附件">
+                      <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <button class="w-8 h-8 rounded text-gray-500 hover:text-dark-900 hover:bg-gray-200 transition-colors flex items-center justify-center" title="使用模板">
+                      <i class="fa-solid fa-bolt"></i>
+                    </button>
+                    <div class="h-4 w-px bg-gray-300 mx-2"></div>
+                    <span class="text-[12px] text-gray-400 font-mono"><span x-text="prompt.length"></span>/4000</span>
+                  </div>
+                  
+                  <div class="flex items-center space-x-2">
+                    <button 
+                      x-show="prompt.length > 0" 
+                      @click="prompt = ''" 
+                      class="px-3 py-1.5 rounded text-[13px] text-gray-500 hover:bg-gray-200 transition-colors">
+                      清空
+                    </button>
+                    <button 
+                      @click="generate()"
+                      :disabled="isGenerating || prompt.trim() === '' || getSelectedModels().length === 0"
+                      class="relative overflow-hidden group px-6 py-2 rounded-lg text-[14px] font-semibold text-white bg-dark-900 hover:bg-black transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                      <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                      <i class="fa-solid fa-circle-notch fa-spin mr-2" x-show="isGenerating" x-cloak></i>
+                      <i class="fa-solid fa-play mr-2" x-show="!isGenerating"></i>
+                      <span x-text="isGenerating ? '对比中...' : '开始对比'"></span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧：3. 模型选择与参数配置区 -->
+          <div class="w-full xl:w-[480px] shrink-0 bg-gray-50 rounded-xl border border-gray-200 p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[14px] font-semibold text-gray-700 flex items-center">
+                <i class="fa-solid fa-server mr-2 text-gray-400"></i>选择并行模型 
+                <span class="ml-2 bg-white px-2 py-0.5 rounded text-xs border border-gray-200 text-gray-500 font-mono" x-text="getSelectedModels().length + '/6'"></span>
+              </h3>
+              <button class="text-[13px] text-primary-600 hover:text-primary-700 font-medium">模型市场</button>
+            </div>
+            
+            <!-- 模型 Grid -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              <template x-for="model in models" :key="model.id">
+                <div 
+                  @click="toggleModel(model.id)"
+                  class="cursor-pointer relative px-3 py-2.5 rounded-lg border transition-all flex items-center select-none"
+                  :class="model.selected ? 'bg-primary-50 border-primary-500/50 shadow-sm' : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'">
+                  
+                  <!-- 左侧Checkbox/Icon -->
+                  <div class="w-4 h-4 rounded border flex items-center justify-center mr-2.5 shrink-0 transition-colors"
+                       :class="model.selected ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'">
+                    <i class="fa-solid fa-check text-white text-[10px]" x-show="model.selected" x-transition:enter="duration-200 scale-0" x-transition:enter-start="scale-0" x-transition:enter-end="scale-100"></i>
+                  </div>
+                  
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[13px] font-semibold text-gray-800 truncate leading-tight" x-text="model.name"></div>
+                    <div class="text-[11px] text-gray-400 truncate leading-tight mt-0.5" x-text="model.provider"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- 参数设置快捷入口 -->
+            <div class="flex items-center justify-between pt-3 border-t border-gray-200/60 mt-auto">
+              <div class="flex items-center space-x-4">
+                <div class="flex items-center cursor-pointer group">
+                  <span class="text-[12px] text-gray-500 group-hover:text-dark-900">温度 (Temp): <span class="font-mono text-dark-900 ml-1">0.7</span></span>
+                </div>
+                <div class="flex items-center cursor-pointer group">
+                  <span class="text-[12px] text-gray-500 group-hover:text-dark-900">联网搜索: <span class="text-green-600 ml-1"><i class="fa-solid fa-toggle-on"></i></span></span>
+                </div>
+              </div>
+              <button class="text-gray-400 hover:text-dark-900 transition-colors" title="高级参数">
+                <i class="fa-solid fa-sliders"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 工具条区 (视图切换等) -->
+    <div class="bg-[#f8fafc] border-b border-gray-200 py-2.5 shrink-0" x-show="hasGenerated" x-transition.opacity x-cloak>
+      <div class="max-w-[1920px] mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <div class="text-[14px] text-gray-600 font-medium">
+          本次耗时: <span class="font-mono text-dark-900">2.4s</span> <span class="text-gray-300 mx-2">|</span> 
+          消耗 Token: <span class="font-mono text-dark-900">~1.2k</span>
+        </div>
+        <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+          <button @click="viewMode = 'grid'" class="px-3 py-1 text-[13px] font-medium rounded-md transition-colors flex items-center" :class="viewMode === 'grid' ? 'bg-gray-100 text-dark-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'">
+            <i class="fa-solid fa-columns mr-1.5"></i>分栏 (Grid)
+          </button>
+          <button @click="viewMode = 'list'" class="px-3 py-1 text-[13px] font-medium rounded-md transition-colors flex items-center" :class="viewMode === 'list' ? 'bg-gray-100 text-dark-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'">
+            <i class="fa-solid fa-list mr-1.5"></i>瀑布 (List)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 结果展示区与辅助说明区 -->
+    <section class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 relative scroll-smooth bg-gray-50/50">
+      <div class="max-w-[1920px] mx-auto h-full">
+        
+        <!-- 空状态 (未生成时) -->
+        <div x-show="!hasGenerated" class="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto" x-transition.opacity>
+          <div class="w-24 h-24 mb-6 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center relative">
+            <i class="fa-solid fa-network-wired text-4xl text-primary-500"></i>
+            <div class="absolute -right-2 -bottom-2 w-8 h-8 bg-green-100 border-2 border-white rounded-full flex items-center justify-center">
+              <i class="fa-solid fa-bolt text-green-600 text-[10px]"></i>
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold text-dark-900 mb-3 tracking-tight">聚合 AI，一键对比</h2>
+          <p class="text-[15px] text-gray-500 mb-8 leading-relaxed">
+            在上方输入问题或 Prompt，勾选需要测试的模型。<br>
+            系统将同时向多个模型下发请求，并为您分栏呈现结构化对比结果。
+          </p>
+          <div class="grid grid-cols-2 gap-3 w-full text-left">
+            <button @click="prompt='请用通俗的语言解释什么是量子计算？'" class="p-3 bg-white border border-gray-200 rounded-xl hover:border-primary-400 hover:shadow-sm transition-all group">
+              <div class="text-[13px] font-semibold text-gray-700 group-hover:text-primary-600 mb-1">💡 概念科普</div>
+              <div class="text-[12px] text-gray-400 truncate">请用通俗的语言解释什么是量子计算？</div>
+            </button>
+            <button @click="prompt='写一段 Python 脚本，用于批量重命名当前目录下所有图片文件。'" class="p-3 bg-white border border-gray-200 rounded-xl hover:border-primary-400 hover:shadow-sm transition-all group">
+              <div class="text-[13px] font-semibold text-gray-700 group-hover:text-primary-600 mb-1">💻 代码生成</div>
+              <div class="text-[12px] text-gray-400 truncate">写一段 Python 脚本，批量重命名图片...</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 生成结果展示 (Grid/List 布局) -->
+        <div 
+          x-show="hasGenerated" 
+          class="transition-all duration-300"
+          :class="viewMode === 'grid' ? 'flex flex-row overflow-x-auto gap-4 pb-4 snap-x' : 'flex flex-col gap-6'"
+          x-cloak>
+          
+          <template x-for="model in getSelectedModels()" :key="model.id">
+            <!-- 独立结果卡片 -->
+            <article class="bg-white rounded-2xl shadow-card border border-gray-200 flex flex-col overflow-hidden shrink-0 snap-center transition-all duration-300 relative"
+                     :class="viewMode === 'grid' ? 'w-full md:w-[calc(50%-8px)] xl:w-[calc(33.333%-11px)] h-[calc(100vh-260px)] min-h-[500px]' : 'w-full min-h-[300px]'">
+              
+              <!-- 1) 卡片 Header -->
+              <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[13px] font-bold"
+                       :class="model.id.includes('gpt') ? 'bg-[#10a37f]' : model.id.includes('claude') ? 'bg-[#d97757]' : model.id.includes('gemini') ? 'bg-[#1a73e8]' : 'bg-dark-900'">
+                    <span x-text="model.name.charAt(0)"></span>
+                  </div>
+                  <div>
+                    <h4 class="text-[15px] font-bold text-dark-900 leading-none mb-1" x-text="model.name"></h4>
+                    <p class="text-[11px] text-gray-400 leading-none" x-text="model.provider"></p>
+                  </div>
+                </div>
+                
+                <!-- 状态标签 -->
+                <div class="flex items-center space-x-2">
+                  <span x-show="model.status === 'loading'" class="flex items-center px-2.5 py-1 rounded bg-primary-50 text-primary-600 text-[12px] font-medium border border-primary-100">
+                    <i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>生成中
+                  </span>
+                  <span x-show="model.status === 'success'" class="flex items-center text-[12px] text-gray-400 font-mono">
+                    <i class="fa-solid fa-bolt text-yellow-500 mr-1"></i> <span x-text="model.tokens"></span>tk
+                  </span>
+                  <span x-show="model.status === 'error'" class="flex items-center px-2.5 py-1 rounded bg-red-50 text-red-600 text-[12px] font-medium border border-red-100">
+                    <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>失败
+                  </span>
+                </div>
+              </div>
+
+              <!-- 2) 卡片 Body (输出内容) -->
+              <div class="flex-1 p-6 overflow-y-auto bg-white relative markdown-body text-[15px] text-gray-800 custom-scrollbar">
+                
+                <!-- Loading 骨架屏 -->
+                <div x-show="model.status === 'loading'" class="animate-pulse space-y-4" x-transition.opacity>
+                  <div class="h-4 bg-gray-200 rounded w-1/3 mb-6"></div>
+                  <div class="space-y-2.5">
+                    <div class="h-3 bg-gray-100 rounded w-full"></div>
+                    <div class="h-3 bg-gray-100 rounded w-full"></div>
+                    <div class="h-3 bg-gray-100 rounded w-5/6"></div>
+                  </div>
+                  <div class="space-y-2.5 pt-4">
+                    <div class="h-3 bg-gray-100 rounded w-full"></div>
+                    <div class="h-3 bg-gray-100 rounded w-4/5"></div>
+                  </div>
+                </div>
+
+                <!-- Error 状态 -->
+                <div x-show="model.status === 'error'" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-white z-10" x-transition.opacity>
+                  <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-500 mb-3">
+                    <i class="fa-solid fa-plug-circle-xmark text-xl"></i>
+                  </div>
+                  <p class="text-[15px] font-semibold text-dark-900 mb-1">API 请求超时</p>
+                  <p class="text-[13px] text-gray-500 mb-5">网络波动或并发限制导致未能获取该模型响应。</p>
+                  <button @click="retry(model)" class="px-5 py-2 bg-white border border-gray-300 rounded-lg text-[13px] font-medium text-gray-700 hover:bg-gray-50 hover:text-dark-900 transition-colors shadow-sm focus:ring-2 focus:ring-primary-500 focus:ring-offset-1">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i>重新请求
+                  </button>
+                </div>
+
+                <!-- Success 内容 (打字机效果包装) -->
+                <div x-show="model.status === 'success'" class="w-full" x-transition.opacity>
+                  <!-- 这里的 v-html 或文本由于是演示，直接用文本替换，并加上简单的 markdown 解析类 -->
+                  <div x-html="formatResult(model.result, model.isTyping)" :class="{'typing-cursor': model.isTyping}"></div>
+                </div>
+
+              </div>
+
+              <!-- 3) 卡片 Footer (工具栏) -->
+              <div class="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between shrink-0" 
+                   x-show="model.status === 'success'" x-transition x-cloak>
+                <div class="flex space-x-1">
+                  <button class="w-8 h-8 rounded text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors flex items-center justify-center" title="赞同">
+                    <i class="fa-regular fa-thumbs-up"></i>
+                  </button>
+                  <button class="w-8 h-8 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center" title="不赞同">
+                    <i class="fa-regular fa-thumbs-down"></i>
+                  </button>
+                </div>
+                
+                <div class="flex space-x-2">
+                  <button class="px-3 py-1.5 rounded text-[13px] font-medium text-gray-500 hover:text-dark-900 hover:bg-gray-200 transition-colors flex items-center">
+                    <i class="fa-solid fa-arrow-rotate-left mr-1.5"></i>重试
+                  </button>
+                  <button @click="copyText(model.result)" class="px-3 py-1.5 rounded text-[13px] font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 transition-colors flex items-center">
+                    <i class="fa-regular fa-copy mr-1.5"></i>复制
+                  </button>
+                </div>
+              </div>
+
+            </article>
+          </template>
+          
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // 简单的 Markdown 转 HTML 函数 (用于演示粗体和段落)
+    function parseMarkdown(text) {
+      if (!text) return '';
+      let html = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+      return `<p>${html}</p>`;
+    }
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('allin1App', () => ({
+        prompt: '',
+        isGenerating: false,
+        hasGenerated: false,
+        viewMode: 'grid', // 'grid' | 'list'
+        toast: { show: false, message: '' },
+        
+        models: [
+          { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI', selected: true, status: 'idle', result: '', fullResult: '', isTyping: false, tokens: 0 },
+          { id: 'claude-3-5', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', selected: true, status: 'idle', result: '', fullResult: '', isTyping: false, tokens: 0 },
+          { id: 'gemini-1-5', name: 'Gemini 1.5 Pro', provider: 'Google', selected: true, status: 'idle', result: '', fullResult: '', isTyping: false, tokens: 0 },
+          { id: 'kimi', name: 'Kimi', provider: 'Moonshot', selected: false, status: 'idle', result: '', fullResult: '', isTyping: false, tokens: 0 },
+          { id: 'deepseek', name: 'DeepSeek-V2', provider: 'DeepSeek', selected: false, status: 'idle', result: '', fullResult: '', isTyping: false, tokens: 0 }
+        ],
+
+        getSelectedModels() {
+          return this.models.filter(m => m.selected);
+        },
+
+        toggleModel(id) {
+          if (this.isGenerating) return;
+          const model = this.models.find(m => m.id === id);
+          if (model) {
+            if (model.selected && this.getSelectedModels().length <= 1) {
+              this.showToast('至少保留一个模型用于对比');
+              return;
+            }
+            model.selected = !model.selected;
+          }
+        },
+
+        generate() {
+          const text = this.prompt.trim();
+          if (!text || this.isGenerating) return;
+          const activeModels = this.getSelectedModels();
+          if (activeModels.length === 0) return;
+
+          this.hasGenerated = true;
+          this.isGenerating = true;
+
+          activeModels.forEach(m => {
+            m.status = 'loading';
+            m.result = '';
+            m.fullResult = '';
+            m.isTyping = false;
+            m.tokens = 0;
+          });
+
+          // 模拟并行 API 请求
+          activeModels.forEach(m => {
+            const delay = 800 + Math.random() * 2000;
+            setTimeout(() => {
+              // 10% 概率模拟错误
+              if (Math.random() < 0.1) {
+                m.status = 'error';
+                this.checkAllDone();
+              } else {
+                m.status = 'success';
+                m.fullResult = this.getMockResponse(m.name, text);
+                m.tokens = Math.floor(Math.random() * 400) + 150;
+                this.simulateTyping(m);
+              }
+            }, delay);
+          });
+        },
+
+        simulateTyping(model) {
+          model.isTyping = true;
+          let index = 0;
+          const speed = 10; // ms per char
+          const fullText = model.fullResult;
+          
+          const type = () => {
+            if (index < fullText.length) {
+              // 每次多打几个字符加快演示
+              const chunk = Math.floor(Math.random() * 5) + 2;
+              model.result = fullText.substring(0, index + chunk);
+              index += chunk;
+              
+              // 自动滚动到底部 (寻找所属卡片的滚动容器)
+              // 简单实现，忽略具体 DOM 抓取，实战中可加 ref
+              
+              setTimeout(type, speed);
+            } else {
+              model.result = fullText;
+              model.isTyping = false;
+              this.checkAllDone();
+            }
+          };
+          type();
+        },
+
+        retry(model) {
+          model.status = 'loading';
+          setTimeout(() => {
+            model.status = 'success';
+            model.fullResult = `**[重试成功]**\n\n` + this.getMockResponse(model.name, this.prompt);
+            model.tokens = Math.floor(Math.random() * 400) + 150;
+            this.simulateTyping(model);
+          }, 1500);
+        },
+
+        checkAllDone() {
+          const actives = this.getSelectedModels();
+          if (actives.every(m => m.status !== 'loading' && !m.isTyping)) {
+            this.isGenerating = false;
+          }
+        },
+
+        copyText(text) {
+          navigator.clipboard.writeText(text).then(() => {
+            this.showToast('内容已复制到剪贴板');
+          });
+        },
+
+        showToast(msg) {
+          this.toast.message = msg;
+          this.toast.show = true;
+          setTimeout(() => { this.toast.show = false; }, 2500);
+        },
+
+        formatResult(text, isTyping) {
+          return parseMarkdown(text);
+        },
+
+        getMockResponse(modelName, prompt) {
+          const trunc = prompt.length > 8 ? prompt.substring(0, 8) + '...' : prompt;
+          const replies = [
+            `针对您提出的 "${trunc}"，这里是核心解答：\n\n**1. 基础认知**\n这属于典型的资源调度问题。在微服务架构下，我们需要利用 Kubernetes 等工具来实现自动伸缩。\n\n**2. 解决方案**\n建议采用基于 Redis 的分布式锁来处理并发，这能有效避免脏数据。\n\n**总结**：\n这不仅是一个技术选择，更是业务妥协的艺术。希望对您有帮助！`,
+            
+            `你好！我是 ${modelName}。关于 "${trunc}"：\n\n我认为可以从三个维度来拆解：\n\n**第一阶段：需求分析**\n明确目标用户群体，不要盲目扩张功能边界。\n\n**第二阶段：技术选型**\nVue 和 React 都能胜任，关键看团队的历史技术栈沉淀。\n\n**第三阶段：灰度发布**\n切记不要一次性全量上线，先圈定 5% 的内测用户。\n\n随时可以深入探讨某个具体细节。`,
+            
+            `收到您的指令。${modelName} 的分析如下：\n\n> 思考过程：识别关键词 -> 检索内部知识库 -> 构建结构化回答。\n\n**执行步骤：**\n1. 初始化项目仓库并配置 Linter。\n2. 编写核心业务逻辑的单元测试。\n3. 实现接口并注入 Mock 数据。\n\n**注意事项：**\n务必在 API 层面做好鉴权与限流（Rate Limiting）。如果需要具体的代码实现，我可以立刻为您生成。`
+          ];
+          return replies[Math.floor(Math.random() * replies.length)];
+        }
+      }));
+    });
+  </script>
+</body>
+</html>
