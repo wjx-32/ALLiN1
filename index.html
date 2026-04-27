@@ -64,8 +64,6 @@
   .avatar-o4{background:linear-gradient(135deg,#111,#444);}
   .avatar-deepseek{background:linear-gradient(135deg,#4D7BFF,#2D52E8);}
   .avatar-kimi{background:linear-gradient(135deg,#111,#444);}
-  /* 选中勾选 */
-  .tick{background:#5B67F5;color:#fff;}
   /* markdown 样式 */
   .md p{margin:.4em 0;}
   .md strong{color:#111827}
@@ -122,16 +120,49 @@
   .img-card:hover .sel, .img-card.selected .sel{opacity:1;}
   .img-card.selected .sel{background:#5B67F5;border-color:#5B67F5;color:#fff;}
 
-  /* 绘图侧栏 select */
-  .mini-select{height:30px;padding:0 26px 0 10px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:12px;color:#374151;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 8px center;outline:none;}
-  .mini-select:focus{border-color:#A3ABFF;}
+  /* 绘图侧栏：自定义下拉（向上展开，避免遮挡下方表单项；统一样式） */
+  .draw-dd{position:relative;flex:1;min-width:0;z-index:1;}
+  .draw-dd.is-open{z-index:150;}
+  .draw-dd-trigger{
+    width:100%;height:30px;padding:0 10px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:12px;color:#374151;
+    display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;outline:none;transition:border-color .15s,box-shadow .15s;
+  }
+  .draw-dd-trigger:hover{border-color:#C7CDFF;}
+  .draw-dd.is-open .draw-dd-trigger{border-color:#A3ABFF;box-shadow:0 0 0 2px rgba(91,103,245,.12);}
+  .draw-dd-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+  .draw-dd-chev{flex-shrink:0;opacity:.55;transition:transform .2s ease;}
+  .draw-dd.is-open .draw-dd-chev{transform:rotate(180deg);opacity:.85;}
+  .draw-dd-menu{
+    position:absolute;left:0;right:0;bottom:calc(100% + 4px);z-index:160;
+    background:#fff;border:1px solid #E0E2F0;border-radius:8px;box-shadow:0 4px 20px rgba(16,24,40,.1),0 0 0 1px rgba(91,103,245,.06);
+    padding:4px;max-height:12rem;overflow-y:auto;opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .15s,transform .15s,visibility .15s;pointer-events:none;
+  }
+  .draw-dd.is-open .draw-dd-menu{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;}
+  .draw-dd-item{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;padding:6px 8px;border:none;border-radius:4px;background:transparent;font-size:12px;color:#374151;text-align:left;cursor:pointer;transition:background .1s;}
+  .draw-dd-item:hover,.draw-dd-item:focus{background:#F0F1FF;outline:none;}
+  .draw-dd-item.is-active{background:linear-gradient(90deg,rgba(91,103,245,.1),rgba(91,103,245,.04));color:#3B45C9;font-weight:600;}
+  .draw-dd-item .dd-check{opacity:0;font-size:11px;flex-shrink:0;}
+  .draw-dd-item.is-active .dd-check{opacity:1;}
 
   /* 气泡 tooltip */
   .tip{position:relative;display:inline-flex;align-items:center;justify-content:center;}
   .tip::before,.tip::after{position:absolute;opacity:0;pointer-events:none;transition:opacity .15s;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);}
   .tip::before{content:attr(data-tip);white-space:nowrap;background:#1F2937;color:#fff;font-size:11px;padding:5px 8px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:30;}
-  .tip::after{content:"";border:4px solid transparent;border-top-color:#1F2937;bottom:calc(100% + 2px);}
+  .tip::after{content:"";border:4px solid transparent;border-top-color:#1F2937;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);}
   .tip:hover::before,.tip:hover::after{opacity:1;}
+  /* 绘图参数区「?」帮助：层级高于自定义下拉（.draw-dd 最高约 160） */
+  #drawParamRows .tip.tip-top{z-index:9999;}
+  #drawParamRows .tip.tip-top::before,#drawParamRows .tip.tip-top::after{z-index:10000;}
+  /* 多行说明（额度规则等），气泡在图标上方，避免被裁切需父级勿设 overflow:hidden */
+  .tip-multi::before{
+    white-space:normal;
+    max-width:14rem;
+    width:max-content;
+    text-align:left;
+    line-height:1.45;
+    padding:8px 10px;
+    z-index:50;
+  }
 
   /* 视图模式 segmented */
   .seg{display:inline-flex;padding:3px;background:#F3F4F6;border-radius:999px;font-size:12px;}
@@ -211,18 +242,19 @@
 
     <!-- 底部：体验次数 + 头像 -->
     <div class="px-3 pt-2 pb-3 border-t border-gray-200 bg-surface-sidebar">
-      <div class="relative rounded-xl bg-gradient-to-br from-[#EEF0FF] via-[#F4F1FF] to-[#FDEDF2] pt-2.5 pb-2.5 pl-3 pr-3 mb-2 overflow-hidden border border-white">
-        <div class="inline-flex items-center h-5 px-2 rounded-md bg-brand-600 text-white text-[11px] font-medium mb-2">体验版本</div>
+      <div class="relative rounded-xl bg-gradient-to-br from-[#EEF0FF] via-[#F4F1FF] to-[#FDEDF2] pt-2.5 pb-2.5 pl-3 pr-3 mb-2 border border-white overflow-visible">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="inline-flex items-center h-5 px-2 rounded-md bg-brand-600 text-white text-[11px] font-medium">体验版本</div>
+          <span class="tip tip-multi w-3.5 h-3.5 shrink-0 rounded-full bg-brand-100 text-brand-600 text-[9px] flex items-center justify-center cursor-help" data-tip="每月免费赠送 200 次对话、100 次绘图额度，次数于每月 1 日重置，当月有效，月底清空。">?</span>
+        </div>
         <div class="space-y-1 relative z-10">
           <div class="flex items-center gap-1.5 text-[12px] text-ink-700">
             <span>剩余对话次数</span>
             <span class="font-bold text-brand-700 text-[14px]">198</span>
-            <span class="w-3.5 h-3.5 rounded-full bg-brand-100 text-brand-600 text-[9px] flex items-center justify-center cursor-help" title="剩余可用对话次数">?</span>
           </div>
           <div class="flex items-center gap-1.5 text-[12px] text-ink-700">
             <span>剩余绘图次数</span>
             <span class="font-bold text-brand-700 text-[14px]">50</span>
-            <span class="w-3.5 h-3.5 rounded-full bg-brand-100 text-brand-600 text-[9px] flex items-center justify-center cursor-help" title="剩余可用绘图次数">?</span>
           </div>
         </div>
         <div class="absolute -right-2 -bottom-1 w-14 h-14 text-[36px] opacity-80 flex items-center justify-center pointer-events-none">⭐</div>
@@ -247,37 +279,60 @@
       <textarea id="drawPrompt" rows="4" class="w-full rounded-lg border border-gray-200 bg-surface-panel p-2.5 text-[13px] outline-none focus:border-brand-400 resize-none" placeholder="请输入画面描述，例如：蓝天白云">蓝天白云</textarea>
     </div>
 
-    <div class="px-5 mt-4 space-y-2.5">
+    <div class="px-5 mt-4 space-y-2.5" id="drawParamRows">
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1 text-[12px] text-ink-500 w-20 shrink-0 whitespace-nowrap">
           生成数量
-          <span class="tip w-3.5 h-3.5 rounded-full bg-gray-100 text-ink-400 text-[9px] cursor-help" data-tip="每个模型生成图片的数量">?</span>
+          <span class="tip tip-top w-3.5 h-3.5 rounded-full bg-gray-100 text-ink-400 text-[9px] cursor-help" data-tip="每个模型生成图片的数量，可在 1～8 张中选择">?</span>
         </div>
-        <select class="mini-select flex-1">
-          <option>1</option><option>2</option><option selected>4</option><option>6</option><option>8</option>
-        </select>
+        <div class="draw-dd" data-draw-dd="count">
+          <button type="button" class="draw-dd-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="选择生成数量">
+            <span class="draw-dd-label">1</span>
+            <svg class="draw-dd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="draw-dd-menu" role="listbox">
+            <button type="button" class="draw-dd-item" data-v="1" role="option"><span>1</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="2" role="option"><span>2</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="3" role="option"><span>3</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="4" role="option"><span>4</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="5" role="option"><span>5</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="6" role="option"><span>6</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="7" role="option"><span>7</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="8" role="option"><span>8</span><span class="dd-check">✓</span></button>
+          </div>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <div class="text-[12px] text-ink-500 w-20 shrink-0 whitespace-nowrap">宽高比</div>
-        <select class="mini-select flex-1">
-          <option selected>1:1（正方形）</option>
-          <option>3:4（竖图）</option>
-          <option>4:3（横图）</option>
-          <option>9:16（手机竖屏）</option>
-          <option>16:9（宽屏）</option>
-        </select>
+        <div class="draw-dd" data-draw-dd="ratio">
+          <button type="button" class="draw-dd-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="选择宽高比">
+            <span class="draw-dd-label">1:1（正方形）</span>
+            <svg class="draw-dd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="draw-dd-menu" role="listbox">
+            <button type="button" class="draw-dd-item" data-v="1:1（正方形）" role="option"><span>1:1（正方形）</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="3:4（竖图）" role="option"><span>3:4（竖图）</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="4:3（横图）" role="option"><span>4:3（横图）</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="9:16（手机竖屏）" role="option"><span>9:16（手机竖屏）</span><span class="dd-check">✓</span></button>
+            <button type="button" class="draw-dd-item" data-v="16:9（宽屏）" role="option"><span>16:9（宽屏）</span><span class="dd-check">✓</span></button>
+          </div>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <div class="text-[12px] text-ink-500 w-20 shrink-0 whitespace-nowrap">分辨率</div>
-        <select class="mini-select flex-1">
-          <option selected>512×512</option><option>768×768</option><option>1024×1024</option>
-        </select>
+        <div class="draw-dd" data-draw-dd="res">
+          <button type="button" class="draw-dd-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="选择分辨率">
+            <span class="draw-dd-label">1024×1024</span>
+            <svg class="draw-dd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="draw-dd-menu" id="drawResMenu" role="listbox"></div>
+        </div>
       </div>
     </div>
 
     <div class="px-5 mt-4 flex items-center justify-between text-[12px] text-ink-500">
       <span>已选中模型：<span id="drawSelCount" class="font-semibold text-brand-600">2</span> 个</span>
-      <span>预计生成：<span id="drawTotalCount" class="font-semibold text-ink-700">8</span> 张</span>
+      <span>预计生成：<span id="drawTotalCount" class="font-semibold text-ink-700">2</span> 张</span>
     </div>
 
     <div class="px-5 mt-3">
@@ -343,7 +398,9 @@
             </button>
             <button class="h-8 px-3 rounded-full bg-white border border-gray-200 text-ink-700 hover:bg-gray-50" data-f="hot">🔥 推荐</button>
             <button class="h-8 px-3 rounded-full bg-white border border-gray-200 text-ink-700 hover:bg-gray-50" data-f="reason">🧠 推理模型</button>
-            <button class="h-8 px-3 rounded-full bg-white border border-gray-200 text-ink-700 hover:bg-gray-50" data-f="code">💻 代码专用</button>
+            <button class="h-8 px-3 rounded-full bg-white border border-gray-200 text-ink-700 hover:bg-gray-50" data-f="code">💻 代码开发</button>
+            <button class="h-8 px-3 rounded-full bg-white border border-gray-200 text-ink-700 hover:bg-gray-50" data-f="domestic">🇨🇳 国内模型</button>
+            <button class="h-8 px-3 rounded-full bg-white border border-gray-200 text-ink-700 hover:bg-gray-50" data-f="overseas">🌐 海外模型</button>
           </div>
         </div>
 
@@ -600,30 +657,48 @@ const state = {
   chatOpenDropdown: null,
   chatExpanded: new Set(),   // 弹窗中展开的系列id
   view: 'home',
+  filter: 'all',
 };
+
+/** 首页模型网格：按筛选类型过滤系列（与版本 tags 联动） */
+function filterSeries(list, f) {
+  if (f === 'all' || f === 'hot') return list;
+  return list.filter((s) => {
+    if (f === 'reason') return s.versions.some((v) => v.tags.some((t) => t.includes('推理')));
+    if (f === 'code') return s.versions.some((v) => v.tags.some((t) => t.includes('代码')));
+    if (f === 'domestic') return s.versions.some((v) => v.tags.includes('国内模型'));
+    if (f === 'overseas') return s.versions.some((v) => v.tags.includes('海外模型'));
+    return true;
+  });
+}
 
 /* ========= 首页：系列聚合卡片渲染 ========= */
 function renderGrid(){
   const grid = document.getElementById('modelGrid');
-  grid.innerHTML = SERIES.map(s => {
+  const seriesList = filterSeries(SERIES, state.filter);
+  grid.innerHTML = seriesList.map(s => {
     const sel = state.selected.has(s.id);
+    const disabled = !sel && state.selected.size >= MAX_SELECT;
     const currentVer = state.versionMap[s.id] || s.def;
     const isDropdownOpen = state.openDropdown === s.id;
     return `
-      <div class="series-card hoverable rounded-xl2 border ${sel?'border-brand-500 ring-1 ring-brand-200 bg-brand-50/40':'border-gray-200 bg-surface-card hover:border-brand-300'} p-4 shadow-card cursor-pointer relative ${isDropdownOpen?'z-30':''}" data-series="${s.id}">
+      <div class="series-card hoverable rounded-xl2 border ${sel?'border-brand-500 ring-1 ring-brand-200 bg-brand-50/40':'border-gray-200 bg-surface-card hover:border-brand-300'} ${disabled?'opacity-60 cursor-not-allowed':''} p-4 shadow-card cursor-pointer relative ${isDropdownOpen?'z-30':''}" data-series="${s.id}">
+        <label class="absolute right-3 top-3 z-20 w-5 h-5 rounded border ${sel?'bg-brand-600 border-brand-600 text-white':'bg-white border-gray-300'} ${disabled && !sel?'bg-gray-100 border-gray-200':''} inline-flex items-center justify-center" data-check-wrap="${s.id}">
+          <input type="checkbox" class="sr-only" ${sel?'checked':''} ${disabled?'disabled':''} data-check="${s.id}" />
+          ${sel ? '✓' : ''}
+        </label>
         <div class="flex items-start gap-3">
           <span class="w-7 h-7 rounded-full shrink-0 inline-flex items-center justify-center text-white text-[12px] font-semibold shadow-card" style="background:${s.dot}">${s.name[0]}</span>
-          <div class="min-w-0 flex-1 pr-24">
+          <div class="min-w-0 flex-1 pr-28">
             <div class="flex items-center gap-1.5">
               <div class="text-[14px] font-semibold text-ink-900">${s.name}</div>
-              ${sel?`<span class="tick w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px]">✓</span>`:''}
             </div>
             <div class="text-[12px] text-ink-500 mt-1 leading-[1.55]">${s.desc}</div>
           </div>
         </div>
 
         <!-- 右上角：版本 pill -->
-        <div class="absolute right-3 top-3">
+        <div class="absolute right-10 top-3">
           <button class="ver-btn h-6 px-2 rounded-full bg-white border border-gray-200 text-[11px] text-ink-700 hover:border-brand-400 hover:text-brand-600 flex items-center gap-1 shadow-card" data-ver-btn="${s.id}">
             ${currentVer}
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
@@ -662,21 +737,51 @@ function renderGrid(){
   // 卡片主体：切换选中
   grid.querySelectorAll('.series-card').forEach(el=>{
     el.addEventListener('click', (e)=>{
-      if (e.target.closest('[data-ver-btn]') || e.target.closest('[data-ver-menu]')) return;
+      if (e.target.closest('[data-ver-btn]') || e.target.closest('[data-ver-menu]') || e.target.closest('[data-check-wrap]')) return;
       const id = el.dataset.series;
-      if (state.selected.has(id)) {
+      const isSelected = state.selected.has(id);
+      if (!isSelected && state.selected.size >= MAX_SELECT) {
+        flashCounter();
+        return;
+      }
+      if (isSelected) {
         state.selected.delete(id);
       } else {
-        if (state.selected.size >= MAX_SELECT) {
-          flashCounter();
-          return;
-        }
         state.selected.add(id);
       }
       state.openDropdown = null;
       renderGrid();
       renderSelectedChips();
       updateCounter();
+    });
+  });
+
+  // 右上角复选框：切换选中
+  grid.querySelectorAll('[data-check]').forEach(el=>{
+    el.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const id = el.dataset.check;
+      const isSelected = state.selected.has(id);
+      if (!isSelected && state.selected.size >= MAX_SELECT) {
+        flashCounter();
+        return;
+      }
+      if (isSelected) {
+        state.selected.delete(id);
+      } else {
+        state.selected.add(id);
+      }
+      state.openDropdown = null;
+      renderGrid();
+      renderSelectedChips();
+      updateCounter();
+    });
+  });
+
+  // 兼容键盘切换（空格/回车）
+  grid.querySelectorAll('[data-check]').forEach(el=>{
+    el.addEventListener('change',(e)=>{
+      e.preventDefault();
     });
   });
 
@@ -982,15 +1087,18 @@ document.querySelectorAll('#historyList .nav-item').forEach(el=>{
     gotoChat();
   });
 });
-// 筛选标签切换样式
+// 筛选标签：样式 + 过滤模型网格
 document.querySelectorAll('#filterTabs button').forEach(b=>{
   b.addEventListener('click',()=>{
+    state.filter = b.dataset.f || 'all';
+    state.openDropdown = null;
     document.querySelectorAll('#filterTabs button').forEach(x=>{
       x.classList.remove('bg-brand-600','text-white');
       x.classList.add('bg-white','border','border-gray-200','text-ink-700');
     });
     b.classList.remove('bg-white','border','border-gray-200','text-ink-700');
     b.classList.add('bg-brand-600','text-white');
+    renderGrid();
   });
 });
 
@@ -1006,15 +1114,138 @@ const IMG_MODELS = [
   {id:'flux-pro-1-1',                   name:'flux-pro-1.1',                   dot:'#22B37A'},
 ];
 
+/** 宽高比 → 可选分辨率；切换宽高比时默认选中「默认项」，并与当前比匹配 */
+const DRAW_RES_BY_RATIO = {
+  '1:1（正方形）':   ['512×512', '768×768', '1024×1024'],
+  '3:4（竖图）':     ['768×1024', '720×1280', '1080×1440'],
+  '4:3（横图）':     ['1024×768', '1280×960', '1536×1152'],
+  '9:16（手机竖屏）': ['720×1280', '1080×1920', '1440×2560'],
+  '16:9（宽屏）':    ['1280×720', '1920×1080', '2560×1440'],
+};
+const DRAW_DEFAULT_RES = {
+  '1:1（正方形）': '1024×1024',
+  '3:4（竖图）': '768×1024',
+  '4:3（横图）': '1024×768',
+  '9:16（手机竖屏）': '720×1280',
+  '16:9（宽屏）': '1280×720',
+};
+
 const drawState = {
   selected: new Set(['gemini-3-1-flash-image-preview','gemini-3-pro-image-preview']),
-  count: 4,
+  count: 1,
+  ratio: '1:1（正方形）',
+  resolution: '1024×1024',
   viewMode: 'detail',    // compact | detail（默认详细模式）
   favOnly: false,
   liked: new Set(['rec1-0','rec1-2','rec2-1','rec2-4','rec3-3']),
   picked: new Set(),     // 精简模式多选
   activeRecord: 0,       // 左侧高亮的记录索引
 };
+
+function getResListForDrawRatio(ratio) {
+  return DRAW_RES_BY_RATIO[ratio] || DRAW_RES_BY_RATIO['1:1（正方形）'];
+}
+function applyResolutionToMatchRatio() {
+  const list = getResListForDrawRatio(drawState.ratio);
+  if (!list.includes(drawState.resolution)) {
+    drawState.resolution = DRAW_DEFAULT_RES[drawState.ratio] || list[0];
+  }
+}
+function buildDrawResMenuHtml() {
+  return getResListForDrawRatio(drawState.ratio)
+    .map(
+      (v) =>
+        `<button type="button" class="draw-dd-item" data-v="${v}" role="option"><span>${v}</span><span class="dd-check">✓</span></button>`
+    )
+    .join('');
+}
+
+let drawPanelDdBound = false;
+function syncDrawPanelDropdowns(){
+  const panel = document.getElementById('drawPanel');
+  if (!panel) return;
+  const countW = panel.querySelector('[data-draw-dd="count"]');
+  if (countW) {
+    countW.querySelector('.draw-dd-label').textContent = String(drawState.count);
+    countW.querySelectorAll('.draw-dd-item').forEach((btn) => {
+      const v = parseInt(btn.getAttribute('data-v'), 10);
+      btn.classList.toggle('is-active', v === drawState.count);
+    });
+  }
+  const ratioW = panel.querySelector('[data-draw-dd="ratio"]');
+  if (ratioW) {
+    ratioW.querySelector('.draw-dd-label').textContent = drawState.ratio;
+    ratioW.querySelectorAll('.draw-dd-item').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.getAttribute('data-v') === drawState.ratio);
+    });
+  }
+  const resW = panel.querySelector('[data-draw-dd="res"]');
+  if (resW) {
+    applyResolutionToMatchRatio();
+    const menu = resW.querySelector('.draw-dd-menu') || resW.querySelector('#drawResMenu');
+    if (menu) menu.innerHTML = buildDrawResMenuHtml();
+    resW.querySelector('.draw-dd-label').textContent = drawState.resolution;
+    resW.querySelectorAll('.draw-dd-item').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.getAttribute('data-v') === drawState.resolution);
+    });
+  }
+}
+function closeDrawDropdowns(){
+  document.querySelectorAll('#drawPanel .draw-dd').forEach((d) => {
+    d.classList.remove('is-open');
+    const t = d.querySelector('.draw-dd-trigger');
+    if (t) t.setAttribute('aria-expanded', 'false');
+  });
+}
+function initDrawPanelDropdowns(){
+  syncDrawPanelDropdowns();
+  if (drawPanelDdBound) return;
+  drawPanelDdBound = true;
+  const panel = document.getElementById('drawPanel');
+  panel.addEventListener('click', (e) => {
+    const trig = e.target.closest('.draw-dd-trigger');
+    const item = e.target.closest('.draw-dd-item');
+    if (trig) {
+      e.stopPropagation();
+      const wrap = trig.closest('.draw-dd');
+      const wasOpen = wrap.classList.contains('is-open');
+      panel.querySelectorAll('.draw-dd').forEach((d) => {
+        d.classList.remove('is-open');
+        const tr = d.querySelector('.draw-dd-trigger');
+        if (tr) tr.setAttribute('aria-expanded', 'false');
+      });
+      if (!wasOpen) {
+        wrap.classList.add('is-open');
+        trig.setAttribute('aria-expanded', 'true');
+      }
+      return;
+    }
+    if (item) {
+      e.stopPropagation();
+      const wrap = item.closest('.draw-dd');
+      const key = wrap.dataset.drawDd;
+      if (key === 'count') drawState.count = parseInt(item.getAttribute('data-v'), 10) || 1;
+      else if (key === 'ratio') {
+        const next = item.getAttribute('data-v') || drawState.ratio;
+        if (next !== drawState.ratio) {
+          drawState.ratio = next;
+          const list = getResListForDrawRatio(drawState.ratio);
+          drawState.resolution = DRAW_DEFAULT_RES[drawState.ratio] || list[0];
+        }
+      } else if (key === 'res') drawState.resolution = item.getAttribute('data-v') || drawState.resolution;
+      closeDrawDropdowns();
+      syncDrawPanelDropdowns();
+      updateDrawCounts();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#drawPanel .draw-dd')) return;
+    closeDrawDropdowns();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawDropdowns();
+  });
+}
 
 /* ---- 绘图模型列表 ---- */
 function renderDrawModels(){
@@ -1476,6 +1707,8 @@ function setMode(mode){
   dv.classList.toggle('hidden', !isDraw);
   dv.classList.toggle('flex', isDraw);
   if (isDraw) {
+    initDrawPanelDropdowns();
+    closeDrawDropdowns();
     renderDrawModels();
     updateDrawCounts();
     renderGallery();
