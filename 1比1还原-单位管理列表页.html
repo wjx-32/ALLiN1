@@ -851,11 +851,11 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th style="width:110px;">姓名</th><th style="width:130px;">手机</th><th>邮箱</th><th style="width:150px;">注册时间</th><th style="width:130px;">已使用次数</th><th style="width:130px;">剩余使用次数</th><th style="width:80px;">状态</th><th style="width:240px;">操作</th></tr>
+                  <tr><th style="width:110px;">姓名</th><th style="width:130px;">手机</th><th>邮箱</th><th style="width:150px;">注册时间</th><th style="width:130px;">已使用额度</th><th style="width:130px;">剩余额度</th><th style="width:80px;">状态</th><th style="width:240px;">操作</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td>左志司</td><td>13640353406</td><td>13640353406@13640353406.com</td><td>2025-10-28 18:48:38</td><td><div>AI对话：0次</div><div>AI绘图：0次</div></td><td><div>AI对话：200次</div><div>AI绘图：100次</div></td><td>已启用</td><td class="ops"><a href="#" data-usage-action="add">增加使用次数</a><a href="#" data-usage-action="recycle">回收使用次数</a><a href="#" data-toggle-status>禁用</a></td></tr>
-                  <tr><td>卢卡</td><td>17893330222</td><td>luka@qq.com</td><td>2025-09-15 15:38:14</td><td><div>AI对话：0次</div><div>AI绘图：0次</div></td><td><div>AI对话：200次</div><div>AI绘图：100次</div></td><td>已启用</td><td class="ops"><a href="#" data-usage-action="add">增加使用次数</a><a href="#" data-usage-action="recycle">回收使用次数</a><a href="#" data-toggle-status>禁用</a></td></tr>
+                  <tr><td>左志司</td><td>13640353406</td><td>13640353406@13640353406.com</td><td>2025-10-28 18:48:38</td><td><div>AI对话：0次</div><div>AI绘图：0张</div></td><td><div>AI对话：200次</div><div>AI绘图：100张</div></td><td>已启用</td><td class="ops"><a href="#" data-usage-action="add">增加额度</a><a href="#" data-usage-action="recycle">回收额度</a><a href="#" data-toggle-status>禁用</a></td></tr>
+                  <tr><td>卢卡</td><td>17893330222</td><td>luka@qq.com</td><td>2025-09-15 15:38:14</td><td><div>AI对话：0次</div><div>AI绘图：0张</div></td><td><div>AI对话：200次</div><div>AI绘图：100张</div></td><td>已启用</td><td class="ops"><a href="#" data-usage-action="add">增加额度</a><a href="#" data-usage-action="recycle">回收额度</a><a href="#" data-toggle-status>禁用</a></td></tr>
                 </tbody>
               </table>
             </div>
@@ -869,7 +869,7 @@
   <div class="modal-mask" id="usageModalMask">
     <div class="usage-modal">
       <div class="usage-hd">
-        <div class="usage-title" id="usageModalTitle">增加使用次数（左志司）</div>
+        <div class="usage-title" id="usageModalTitle">增加额度（左志司）</div>
         <span id="usageModalClose">×</span>
       </div>
       <div class="usage-bd">
@@ -880,7 +880,7 @@
         </div>
         <div class="usage-row">
           <span class="required">*</span>
-          <span id="usageModalLabel2">增加AI绘图次数：</span>
+          <span id="usageModalLabel2">增加AI绘图张数：</span>
           <input id="usageModalInput2" class="usage-input" placeholder="请输入整数" value="0" />
         </div>
       </div>
@@ -2001,9 +2001,9 @@
       usageActionType = action;
       usageTargetName = userName;
       const actionText = action === 'recycle' ? '回收' : '增加';
-      usageModalTitle.textContent = actionText + '使用次数（' + userName + '）';
+      usageModalTitle.textContent = actionText + '额度（' + userName + '）';
       usageModalLabel1.textContent = actionText + 'AI对话次数：';
-      usageModalLabel2.textContent = actionText + 'AI绘图次数：';
+      usageModalLabel2.textContent = actionText + 'AI绘图张数：';
       usageModalInput1.value = '0';
       usageModalInput2.value = '0';
       usageModalMask.classList.add('show');
@@ -2034,11 +2034,11 @@
         return;
       }
       if (Number(val1) <= 0 && Number(val2) <= 0) {
-        alert('AI对话次数和AI绘图次数至少一个大于0');
+        alert('AI对话次数和AI绘图张数至少一个大于0');
         usageModalInput1.focus();
         return;
       }
-      alert((usageActionType === 'recycle' ? '回收' : '增加') + '成功：' + usageTargetName + '，AI对话 ' + val1 + ' 次，AI绘图 ' + val2 + ' 次');
+      alert((usageActionType === 'recycle' ? '回收' : '增加') + '成功：' + usageTargetName + '，AI对话 ' + val1 + ' 次，AI绘图 ' + val2 + ' 张');
       closeUsageModal();
     });
 
