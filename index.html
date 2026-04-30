@@ -180,6 +180,20 @@
     display:inline-flex;align-items:center;gap:6px;
   }
   #toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+
+  /* 开始生图：按钮 loading */
+  .btn-gen{position:relative;overflow:hidden;}
+  .btn-gen.is-loading{cursor:wait;opacity:.92;}
+  .btn-gen.is-loading::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.28) 45%,transparent 55%);
+    width:55%;animation:btnGenShimmer 1.1s ease-in-out infinite;
+  }
+  @keyframes btnGenShimmer{0%{transform:translateX(-120%)}100%{transform:translateX(220%)}}
+
+  /* 图库区域 loading 遮罩 */
+  #drawGenOverlay{display:none;flex-direction:column;align-items:center;justify-content:center;}
+  #drawGenOverlay.show{display:flex;}
 </style>
 </head>
 <body class="bg-white text-ink-900">
@@ -352,7 +366,13 @@
     </div>
 
     <div class="px-5 mt-3">
-      <button id="btnGenerate" class="w-full h-10 rounded-lg text-white font-medium text-[14px] bg-gradient-to-r from-[#8A72FF] to-[#5B67F5] hover:brightness-110 shadow-card">开始生成</button>
+      <button type="button" id="btnGenerate" class="btn-gen w-full h-10 rounded-lg text-white font-medium text-[14px] bg-gradient-to-r from-[#8A72FF] to-[#5B67F5] hover:brightness-110 shadow-card inline-flex items-center justify-center gap-2 disabled:pointer-events-none">
+        <span id="btnGenIdle" class="inline-flex items-center justify-center gap-2">开始生成</span>
+        <span id="btnGenBusy" class="hidden items-center justify-center gap-2">
+          <svg class="animate-spin h-4 w-4 shrink-0 opacity-95" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>
+          <span>生成中…</span>
+        </span>
+      </button>
     </div>
 
     <div class="px-5 mt-6">
@@ -489,7 +509,14 @@
         </div>
       </div>
 
-      <div id="galleryWrap" class="flex-1 overflow-y-auto thin-scroll px-6 py-5"></div>
+      <div class="flex-1 relative min-h-0 flex flex-col">
+        <div id="galleryWrap" class="flex-1 overflow-y-auto thin-scroll px-6 py-5 relative z-0 min-h-0"></div>
+        <div id="drawGenOverlay" class="absolute inset-0 z-30 items-center justify-center bg-white/70 backdrop-blur-[3px] gap-2 pointer-events-none" aria-hidden="true">
+          <svg class="animate-spin h-9 w-9 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>
+          <span class="text-[13px] font-medium text-ink-700">正在生成图片…</span>
+          <span class="text-[11px] text-ink-500">请稍候</span>
+        </div>
+      </div>
     </section>
 
   </main>
@@ -1805,7 +1832,8 @@ document.getElementById('favOnly').addEventListener('click', ()=>{
   drawState.favOnly = sw.classList.contains('on');
   renderGallery();
 });
-// 开始生成：轻量反馈
+// 开始生成：按钮 + 图库 loading
+let drawGenBusy = false;
 document.getElementById('btnGenerate').addEventListener('click', ()=>{
   const promptEl = document.getElementById('drawPrompt');
   if (promptEl && promptEl.value.trim().length > DRAW_PROMPT_HARD_LIMIT) {
@@ -1814,11 +1842,40 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
     showToast('提示词内容过长，请精简后再试');
     return;
   }
+  if (drawGenBusy) return;
+  drawGenBusy = true;
+
   const b = document.getElementById('btnGenerate');
-  const txt = b.textContent;
-  b.textContent = '生成中…';
+  const idle = document.getElementById('btnGenIdle');
+  const busy = document.getElementById('btnGenBusy');
+  const overlay = document.getElementById('drawGenOverlay');
+
   b.disabled = true;
-  setTimeout(()=>{ b.textContent = txt; b.disabled = false; }, 1200);
+  b.classList.add('is-loading');
+  b.setAttribute('aria-busy', 'true');
+  idle.classList.add('hidden');
+  idle.classList.remove('inline-flex');
+  busy.classList.remove('hidden');
+  busy.classList.add('inline-flex');
+  if (overlay) {
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  setTimeout(()=>{
+    b.disabled = false;
+    b.classList.remove('is-loading');
+    b.removeAttribute('aria-busy');
+    busy.classList.add('hidden');
+    busy.classList.remove('inline-flex');
+    idle.classList.remove('hidden');
+    idle.classList.add('inline-flex');
+    if (overlay) {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+    drawGenBusy = false;
+  }, 1200);
 });
 
 /* 初始渲染 */
