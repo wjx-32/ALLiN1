@@ -371,6 +371,28 @@
     .model-table-wrap table {
       min-width: 1880px;
     }
+    .model-table-wrap th,
+    .model-table-wrap td {
+      background: #fff;
+    }
+    .model-table-wrap thead th {
+      background: #f4f7fc;
+    }
+    /* 固定左侧关键列，避免横向滚动丢失 */
+    .model-table-wrap th.sticky-col,
+    .model-table-wrap td.sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      box-shadow: 1px 0 0 #eef1f7;
+    }
+    .model-table-wrap th.sticky-col-2,
+    .model-table-wrap td.sticky-col-2 {
+      position: sticky;
+      left: 160px; /* 等于“模型名称”列宽 */
+      z-index: 3;
+      box-shadow: 1px 0 0 #eef1f7;
+    }
     .model-table-wrap td {
       white-space: normal;
       word-break: break-all;
@@ -689,7 +711,9 @@
                   <option value="海外模型">海外模型</option>
                   <option value="国内模型">国内模型</option>
                   <option value="推理模型">推理模型</option>
-                  <option value="代码模型">代码模型</option>
+                  <option value="大语言模型">大语言模型</option>
+                  <option value="生图模型">生图模型</option>
+                  <option value="代码能力">代码能力</option>
                 </select>
                 <span class="label">模型标签</span><input id="modelQueryTag" class="input" placeholder="请输入" style="min-width:140px;" />
                 <span class="label">业务范围</span>
@@ -713,12 +737,14 @@
                 <table>
                   <thead>
                     <tr>
-                      <th style="width:160px;">模型名称</th>
-                      <th style="width:170px;">模型CODE</th>
+                      <th class="sticky-col" style="width:160px;">模型名称</th>
+                      <th class="sticky-col-2" style="width:170px;">模型CODE</th>
                       <th style="width:100px;">服务商</th>
-                      <th style="width:95px;">输入价格/MTokens</th>
-                      <th style="width:95px;">输出价格/MTokens</th>
-                      <th style="width:80px;">联网搜索(元)</th>
+                      <th style="width:110px;">计费方式</th>
+                      <th style="width:110px;">输入价格/MTokens</th>
+                      <th style="width:110px;">输出价格/MTokens</th>
+                      <th style="width:110px;">图片单价/张</th>
+                      <th style="width:90px;">联网搜索/次</th>
                     <th style="width:120px;">使用业务范围</th>
                       <th style="width:170px;">模型标签</th>
                       <th style="width:130px;">模型类型</th>
@@ -1012,24 +1038,40 @@
             <label class="perm-item" style="margin-right:14px;"><input type="checkbox" id="modelTypeOversea" /> 海外模型</label>
             <label class="perm-item" style="margin-right:14px;"><input type="checkbox" id="modelTypeDomestic" /> 国内模型</label>
             <label class="perm-item" style="margin-right:14px;"><input type="checkbox" id="modelTypeReasoning" /> 推理模型</label>
-            <label class="perm-item"><input type="checkbox" id="modelTypeCode" /> 代码模型</label>
+            <label class="perm-item" style="margin-right:14px;"><input type="checkbox" id="modelTypeLLM" /> 大语言模型</label>
+            <label class="perm-item" style="margin-right:14px;"><input type="checkbox" id="modelTypeImage" /> 生图模型</label>
+            <label class="perm-item"><input type="checkbox" id="modelTypeCode" /> 代码能力</label>
           </div>
-          <label class="model-form-item"><span>输入价格：</span>
+          <div class="model-form-item full">
+            <span><span class="required">*</span>计费方式：</span>
+            <label class="perm-item" style="margin-right:16px;"><input type="radio" name="modelBillingMode" id="modelBillingToken" value="token" checked /> 按Token计费</label>
+            <label class="perm-item"><input type="radio" name="modelBillingMode" id="modelBillingImage" value="image" /> 按图片数量计费</label>
+          </div>
+          <label class="model-form-item billing-token-field"><span>输入价格：</span>
             <span class="inline-field">
               <input id="modelInputPriceInput" class="usage-input" placeholder="0.00" />
               <select id="modelInputPriceCurrency" class="select"><option value="CNY">人民币</option><option value="USD">美元</option></select>
+              <span style="color:#7c8391;font-size:12px;margin-left:4px;">/MTokens</span>
             </span>
           </label>
-          <label class="model-form-item"><span>输出价格：</span>
+          <label class="model-form-item billing-token-field"><span>输出价格：</span>
             <span class="inline-field">
               <input id="modelOutputPriceInput" class="usage-input" placeholder="0.00" />
               <select id="modelOutputPriceCurrency" class="select"><option value="CNY">人民币</option><option value="USD">美元</option></select>
+              <span style="color:#7c8391;font-size:12px;margin-left:4px;">/MTokens</span>
             </span>
           </label>
-          <label class="model-form-item"><span>联网搜索：</span>
+          <label class="model-form-item billing-token-field"><span>联网搜索：</span>
             <span class="inline-field">
               <input id="modelSearchPriceInput" class="usage-input" placeholder="0.00" />
               <select id="modelSearchPriceCurrency" class="select"><option value="CNY">人民币</option><option value="USD">美元</option></select>
+            </span>
+          </label>
+          <label class="model-form-item billing-image-field" style="display:none;"><span>图片单价：</span>
+            <span class="inline-field">
+              <input id="modelImagePriceInput" class="usage-input" placeholder="0.00" />
+              <select id="modelImagePriceCurrency" class="select"><option value="CNY">人民币</option><option value="USD">美元</option></select>
+              <span style="color:#7c8391;font-size:12px;margin-left:4px;">/张</span>
             </span>
           </label>
           <div class="model-form-item full">
@@ -1102,9 +1144,9 @@
                   <span class="logo-uploader-action" id="providerLogoRemove">删除</span>
                 </div>
               </div>
-              <input id="providerLogoFileInput" type="file" accept=".jpeg,.jpg,.png,.bmp,.gif,image/*" style="display:none;" />
+              <input id="providerLogoFileInput" type="file" accept=".jpeg,.jpg,.png,.bmp,.gif,image/jpeg,image/png,image/bmp,image/gif" style="display:none;" />
               <div id="providerLogoFileName" style="font-size:11px;color:#7b8290;margin-top:6px;">未选择文件</div>
-              <div class="logo-upload-tip">大小200*200像素，图片需小于300k，支持上传文件扩展名：jpeg .jpg .png .bmp .gif</div>
+              <div class="logo-upload-tip">建议尺寸 200*200 像素，图片需小于 300KB，仅支持图片格式：.jpeg / .jpg / .png / .bmp / .gif</div>
             </div>
           </div>
           <label class="model-form-item full"><span>官网地址：</span><input id="providerUrlInput" class="usage-input" placeholder="https://..." /></label>
@@ -1215,6 +1257,8 @@
     const modelTypeOversea = document.getElementById('modelTypeOversea');
     const modelTypeDomestic = document.getElementById('modelTypeDomestic');
     const modelTypeReasoning = document.getElementById('modelTypeReasoning');
+    const modelTypeLLM = document.getElementById('modelTypeLLM');
+    const modelTypeImage = document.getElementById('modelTypeImage');
     const modelTypeCode = document.getElementById('modelTypeCode');
     const modelInputPriceInput = document.getElementById('modelInputPriceInput');
     const modelOutputPriceInput = document.getElementById('modelOutputPriceInput');
@@ -1222,6 +1266,10 @@
     const modelOutputPriceCurrency = document.getElementById('modelOutputPriceCurrency');
     const modelSearchPriceInput = document.getElementById('modelSearchPriceInput');
     const modelSearchPriceCurrency = document.getElementById('modelSearchPriceCurrency');
+    const modelImagePriceInput = document.getElementById('modelImagePriceInput');
+    const modelImagePriceCurrency = document.getElementById('modelImagePriceCurrency');
+    const modelBillingToken = document.getElementById('modelBillingToken');
+    const modelBillingImage = document.getElementById('modelBillingImage');
     const modelBizChatInput = document.getElementById('modelBizChatInput');
     const modelBizDrawInput = document.getElementById('modelBizDrawInput');
     const modelRecommendedInput = document.getElementById('modelRecommendedInput');
@@ -1263,10 +1311,10 @@
     let providerLogoValue = '';
     let editingModelTags = [];
     const modelRows = [
-      { id: 1, provider: 'Anthropic', name: 'claude-opus-4-5', code: 'claude-opus-4-5', inputPriceValue: '5.50', inputPriceCurrency: 'USD', outputPriceValue: '27.50', outputPriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '适合高质量写作与深度对话；科研人员可用来写论文、综述长文献或拆解复杂问题。', enabled: '已启用' },
-      { id: 2, provider: 'Anthropic', name: 'claude-haiku-4-5', code: 'claude-haiku-4-5', inputPriceValue: '1.10', inputPriceCurrency: 'USD', outputPriceValue: '5.50', outputPriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话', tags: '快速推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '响应极快，适合日常问答、课堂查资料；不适合深度科研或复杂写作。', enabled: '已启用' },
-      { id: 3, provider: 'Google', name: 'gemini-3-pro-preview', code: 'gemini-3-pro-preview', inputPriceValue: '1.60', inputPriceCurrency: 'USD', outputPriceValue: '9.60', outputPriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，多模态，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '全能多模态大模型，支持图文语音；科研用户可用于分析实验图与生成报告。', enabled: '已启用' },
-      { id: 4, provider: '豆包', name: 'doubao-seed-1-6-thinking-250615', code: 'doubao-seed-1-6-thinking-250615', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', searchPriceValue: '0.00', searchPriceCurrency: 'CNY', bizScope: 'AI绘图', tags: '深度复杂推理', type: '国内模型,推理模型', recommended: '是', intro: '适用于深度复杂推理、法律、金融与医疗场景。', enabled: '已启用' }
+      { id: 1, provider: 'Anthropic', name: 'claude-opus-4-5', code: 'claude-opus-4-5', billingMode: 'token', inputPriceValue: '5.50', inputPriceCurrency: 'USD', outputPriceValue: '27.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '适合高质量写作与深度对话；科研人员可用来写论文、综述长文献或拆解复杂问题。', enabled: '已启用' },
+      { id: 2, provider: 'Anthropic', name: 'claude-haiku-4-5', code: 'claude-haiku-4-5', billingMode: 'token', inputPriceValue: '1.10', inputPriceCurrency: 'USD', outputPriceValue: '5.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话', tags: '快速推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '响应极快，适合日常问答、课堂查资料；不适合深度科研或复杂写作。', enabled: '已启用' },
+      { id: 3, provider: 'Google', name: 'gemini-3-pro-preview', code: 'gemini-3-pro-preview', billingMode: 'token', inputPriceValue: '1.60', inputPriceCurrency: 'USD', outputPriceValue: '9.60', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，多模态，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '全能多模态大模型，支持图文语音；科研用户可用于分析实验图与生成报告。', enabled: '已启用' },
+      { id: 4, provider: '豆包', name: 'doubao-seedream-4-0', code: 'doubao-seedream-4-0', billingMode: 'image', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', imagePriceValue: '0.20', imagePriceCurrency: 'CNY', searchPriceValue: '0.00', searchPriceCurrency: 'CNY', bizScope: 'AI绘图', tags: '文生图，国内模型', type: '国内模型', recommended: '是', intro: '豆包图像生成模型，按图片数量计费，适合批量出图。', enabled: '已启用' }
     ];
     const modelModifyLogs = [
       { time: '2026-04-28 14:58:11', operator: '李月明', action: '新增模型', remark: '模型：claude-opus-4-5｜CODE=claude-opus-4-5｜服务商=Anthropic｜输入价=$5.50/MTokens｜输出价=$27.50/MTokens｜联网搜索=$0.03｜业务范围=AI对话、AI绘图｜模型类型=海外模型、推理模型｜模型标签=深度推理/国外模型｜是否推荐=否｜状态=已启用' },
@@ -1363,16 +1411,24 @@
             const sign = ccy === 'USD' ? '$' : '￥';
             return sign + n;
           };
+          const billingMode = item.billingMode || 'token';
+          const billingText = billingMode === 'image' ? '按图片数量计费' : '按Token计费';
+          const inputCell = billingMode === 'image' ? '<span style="color:#9aa3b2;">-</span>' : escapeHtml(formatMoney(item.inputPriceValue, item.inputPriceCurrency));
+          const outputCell = billingMode === 'image' ? '<span style="color:#9aa3b2;">-</span>' : escapeHtml(formatMoney(item.outputPriceValue, item.outputPriceCurrency));
+          const imageCell = billingMode === 'image' ? escapeHtml(formatMoney(item.imagePriceValue, item.imagePriceCurrency)) : '<span style="color:#9aa3b2;">-</span>';
+          const searchCell = billingMode === 'image' ? '<span style="color:#9aa3b2;">-</span>' : escapeHtml(formatMoney(item.searchPriceValue, item.searchPriceCurrency));
           const tagsArr = String(item.tags || '').split(/[，,]/).map((t) => t.trim()).filter(Boolean);
           const tagsHtml = tagsArr.length ? tagsArr.map((t) => ('<span class="model-badge">' + escapeHtml(t) + '</span>')).join('') : '<span style="color:#9aa3b2;">-</span>';
           return (
         '<tr data-model-id="' + item.id + '">' +
-        '<td>' + escapeHtml(item.name) + '</td>' +
-        '<td>' + escapeHtml(item.code) + '</td>' +
+        '<td class="sticky-col">' + escapeHtml(item.name) + '</td>' +
+        '<td class="sticky-col-2">' + escapeHtml(item.code) + '</td>' +
         '<td>' + escapeHtml(item.provider) + '</td>' +
-        '<td>' + escapeHtml(formatMoney(item.inputPriceValue, item.inputPriceCurrency)) + '</td>' +
-        '<td>' + escapeHtml(formatMoney(item.outputPriceValue, item.outputPriceCurrency)) + '</td>' +
-        '<td>' + escapeHtml(formatMoney(item.searchPriceValue, item.searchPriceCurrency)) + '</td>' +
+        '<td>' + escapeHtml(billingText) + '</td>' +
+        '<td>' + inputCell + '</td>' +
+        '<td>' + outputCell + '</td>' +
+        '<td>' + imageCell + '</td>' +
+        '<td>' + searchCell + '</td>' +
         '<td>' + escapeHtml(item.bizScope || 'AI对话') + '</td>' +
         '<td>' + tagsHtml + '</td>' +
         '<td>' + escapeHtml(item.type) + '</td>' +
@@ -1433,9 +1489,16 @@
       modelListSection.classList.toggle('hidden', !modelActive);
       providerListSection.classList.toggle('hidden', modelActive);
     }
+    function applyBillingModeUI(mode) {
+      const isImage = mode === 'image';
+      document.querySelectorAll('.billing-token-field').forEach((el) => { el.style.display = isImage ? 'none' : ''; });
+      document.querySelectorAll('.billing-image-field').forEach((el) => { el.style.display = isImage ? '' : 'none'; });
+    }
     function openModelEditor(row) {
       const data = row || {
-        provider: '', name: '', code: '', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', searchPriceValue: '0.00', searchPriceCurrency: 'CNY',
+        provider: '', name: '', code: '', billingMode: 'token',
+        inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY',
+        imagePriceValue: '0.00', imagePriceCurrency: 'CNY', searchPriceValue: '0.00', searchPriceCurrency: 'CNY',
         bizScope: 'AI对话', tags: '', type: '', recommended: '否', intro: ''
       };
       editingModelId = row ? row.id : null;
@@ -1446,13 +1509,21 @@
       modelTypeOversea.checked = (data.type || '').includes('海外模型') || (data.type || '').includes('国外模型');
       modelTypeDomestic.checked = (data.type || '').includes('国内模型');
       modelTypeReasoning.checked = (data.type || '').includes('推理模型');
-      modelTypeCode.checked = (data.type || '').includes('代码模型');
+      modelTypeLLM.checked = (data.type || '').includes('大语言模型');
+      modelTypeImage.checked = (data.type || '').includes('生图模型');
+      modelTypeCode.checked = (data.type || '').includes('代码能力') || (data.type || '').includes('代码模型');
+      const billingMode = data.billingMode || 'token';
+      modelBillingToken.checked = billingMode !== 'image';
+      modelBillingImage.checked = billingMode === 'image';
+      applyBillingModeUI(billingMode);
       modelInputPriceInput.value = data.inputPriceValue ?? '0.00';
       modelInputPriceCurrency.value = data.inputPriceCurrency || 'CNY';
       modelOutputPriceInput.value = data.outputPriceValue ?? '0.00';
       modelOutputPriceCurrency.value = data.outputPriceCurrency || 'CNY';
       modelSearchPriceInput.value = data.searchPriceValue ?? '0.00';
       modelSearchPriceCurrency.value = data.searchPriceCurrency || 'CNY';
+      modelImagePriceInput.value = data.imagePriceValue ?? '0.00';
+      modelImagePriceCurrency.value = data.imagePriceCurrency || 'CNY';
       modelBizChatInput.checked = (data.bizScope || '').includes('AI对话');
       modelBizDrawInput.checked = (data.bizScope || '').includes('AI绘图');
       modelRecommendedInput.value = data.recommended;
@@ -1524,7 +1595,9 @@
       if (modelTypeOversea.checked) types.push('海外模型');
       if (modelTypeDomestic.checked) types.push('国内模型');
       if (modelTypeReasoning.checked) types.push('推理模型');
-      if (modelTypeCode.checked) types.push('代码模型');
+      if (modelTypeLLM.checked) types.push('大语言模型');
+      if (modelTypeImage.checked) types.push('生图模型');
+      if (modelTypeCode.checked) types.push('代码能力');
       if (!provider || !name || !code || types.length === 0) {
         alert('请填写服务商、模型名称、模型CODE，并至少选择一个模型类型');
         return;
@@ -1536,14 +1609,18 @@
         alert('请至少选择一个使用业务范围');
         return;
       }
+      const billingMode = modelBillingImage.checked ? 'image' : 'token';
       const payload = {
         provider: provider,
         name: name,
         code: code,
+        billingMode: billingMode,
         inputPriceValue: modelInputPriceInput.value.trim() || '0.00',
         inputPriceCurrency: modelInputPriceCurrency.value,
         outputPriceValue: modelOutputPriceInput.value.trim() || '0.00',
         outputPriceCurrency: modelOutputPriceCurrency.value,
+        imagePriceValue: modelImagePriceInput.value.trim() || '0.00',
+        imagePriceCurrency: modelImagePriceCurrency.value,
         searchPriceValue: modelSearchPriceInput.value.trim() || '0.00',
         searchPriceCurrency: modelSearchPriceCurrency.value,
         bizScope: bizScopes.join('、'),
@@ -1560,12 +1637,17 @@
         const changes = [];
         if (before.provider !== target.provider) changes.push('服务商：' + before.provider + ' → ' + target.provider);
         if (before.code !== target.code) changes.push('CODE：' + before.code + ' → ' + target.code);
+        const billingLabel = (m) => m === 'image' ? '按图片数量计费' : '按Token计费';
+        if ((before.billingMode || 'token') !== (target.billingMode || 'token')) changes.push('计费方式：' + billingLabel(before.billingMode) + ' → ' + billingLabel(target.billingMode));
         const inBefore = moneyText(before.inputPriceValue, before.inputPriceCurrency);
         const inAfter = moneyText(target.inputPriceValue, target.inputPriceCurrency);
-        if (inBefore !== inAfter) changes.push('输入价：' + inBefore + ' → ' + inAfter);
+        if (inBefore !== inAfter) changes.push('输入价：' + inBefore + '/MTokens → ' + inAfter + '/MTokens');
         const outBefore = moneyText(before.outputPriceValue, before.outputPriceCurrency);
         const outAfter = moneyText(target.outputPriceValue, target.outputPriceCurrency);
-        if (outBefore !== outAfter) changes.push('输出价：' + outBefore + ' → ' + outAfter);
+        if (outBefore !== outAfter) changes.push('输出价：' + outBefore + '/MTokens → ' + outAfter + '/MTokens');
+        const imgBefore = moneyText(before.imagePriceValue, before.imagePriceCurrency);
+        const imgAfter = moneyText(target.imagePriceValue, target.imagePriceCurrency);
+        if (imgBefore !== imgAfter) changes.push('图片单价：' + imgBefore + '/张 → ' + imgAfter + '/张');
         const sBefore = moneyText(before.searchPriceValue, before.searchPriceCurrency);
         const sAfter = moneyText(target.searchPriceValue, target.searchPriceCurrency);
         if (sBefore !== sAfter) changes.push('联网搜索：' + sBefore + ' → ' + sAfter);
@@ -1578,13 +1660,17 @@
       } else {
         const nextId = Math.max(...modelRows.map((item) => item.id), 0) + 1;
         modelRows.unshift(Object.assign({ id: nextId }, payload));
+        const priceDesc = payload.billingMode === 'image'
+          ? '｜图片单价=' + moneyText(payload.imagePriceValue, payload.imagePriceCurrency) + '/张'
+          : '｜输入价=' + moneyText(payload.inputPriceValue, payload.inputPriceCurrency) + '/MTokens' +
+            '｜输出价=' + moneyText(payload.outputPriceValue, payload.outputPriceCurrency) + '/MTokens' +
+            '｜联网搜索=' + moneyText(payload.searchPriceValue, payload.searchPriceCurrency);
         pushModelLog('新增模型',
           '模型：' + payload.name +
           '｜CODE=' + payload.code +
           '｜服务商=' + payload.provider +
-          '｜输入价=' + moneyText(payload.inputPriceValue, payload.inputPriceCurrency) + '/MTokens' +
-          '｜输出价=' + moneyText(payload.outputPriceValue, payload.outputPriceCurrency) + '/MTokens' +
-          '｜联网搜索=' + moneyText(payload.searchPriceValue, payload.searchPriceCurrency) +
+          '｜计费方式=' + (payload.billingMode === 'image' ? '按图片数量计费' : '按Token计费') +
+          priceDesc +
           '｜业务范围=' + payload.bizScope +
           '｜模型类型=' + payload.type +
           '｜模型标签=' + payload.tags +
@@ -1767,6 +1853,8 @@
     modelEditorClose.addEventListener('click', closeModelEditor);
     modelEditorCancel.addEventListener('click', closeModelEditor);
     modelEditorConfirm.addEventListener('click', saveModel);
+    modelBillingToken.addEventListener('change', () => applyBillingModeUI('token'));
+    modelBillingImage.addEventListener('change', () => applyBillingModeUI('image'));
     modelTagAddBtn.addEventListener('click', () => {
       addModelTag(modelTagInput.value);
       modelTagInput.value = '';
@@ -1845,8 +1933,11 @@
     providerLogoFileInput.addEventListener('change', () => {
       const file = providerLogoFileInput.files && providerLogoFileInput.files[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) {
-        alert('请上传图片文件');
+      const allowedExt = ['jpeg', 'jpg', 'png', 'bmp', 'gif'];
+      const allowedMime = ['image/jpeg', 'image/png', 'image/bmp', 'image/gif'];
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (!allowedMime.includes(file.type) || !allowedExt.includes(ext)) {
+        alert('仅支持上传 jpeg / jpg / png / bmp / gif 格式的图片');
         providerLogoFileInput.value = '';
         return;
       }
