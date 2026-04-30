@@ -168,6 +168,18 @@
   .seg{display:inline-flex;padding:3px;background:#F3F4F6;border-radius:999px;font-size:12px;}
   .seg button{height:26px;padding:0 12px;border-radius:999px;color:#6B7280;}
   .seg button.active{background:#fff;color:#3B45C9;box-shadow:0 1px 2px rgba(16,24,40,.06);}
+
+  /* 轻量 toast */
+  #toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(8px);
+    background:rgba(17,24,39,.96);color:#fff;font-size:12px;line-height:1.4;
+    padding:9px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);
+    z-index:120;opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .18s,transform .18s,visibility .18s;
+    max-width:min(90vw,460px);text-align:center;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  #toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body class="bg-white text-ink-900">
@@ -277,13 +289,17 @@
     <div class="px-5 mt-3">
       <div class="text-[12px] text-ink-500 mb-1.5">提示词</div>
       <textarea id="drawPrompt" rows="4" class="w-full rounded-lg border border-gray-200 bg-surface-panel p-2.5 text-[13px] outline-none focus:border-brand-400 resize-none" placeholder="请输入画面描述，例如：蓝天白云">蓝天白云</textarea>
+      <div class="mt-1.5 flex items-center justify-between text-[11px]">
+        <span id="drawPromptTip" class="text-ink-400">建议≤300字，突出主体、风格与关键细节</span>
+        <span id="drawPromptCount" class="text-ink-400">0 字</span>
+      </div>
     </div>
 
     <div class="px-5 mt-4 space-y-2.5" id="drawParamRows">
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1 text-[12px] text-ink-500 w-20 shrink-0 whitespace-nowrap">
           生成数量
-          <span class="tip tip-top w-3.5 h-3.5 rounded-full bg-gray-100 text-ink-400 text-[9px] cursor-help" data-tip="每个模型生成图片的数量，可在 1～8 张中选择">?</span>
+          <span class="tip tip-top w-3.5 h-3.5 rounded-full bg-gray-100 text-ink-400 text-[9px] cursor-help" data-tip="每个模型生成的图片数量">?</span>
         </div>
         <div class="draw-dd" data-draw-dd="count">
           <button type="button" class="draw-dd-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="选择生成数量">
@@ -548,6 +564,8 @@
     </div>
   </div>
 </div>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ========= 模型数据（按系列聚合） ========= */
@@ -1141,6 +1159,8 @@ const drawState = {
   picked: new Set(),     // 精简模式多选
   activeRecord: 0,       // 左侧高亮的记录索引
 };
+const DRAW_PROMPT_SOFT_LIMIT = 300;
+const DRAW_PROMPT_HARD_LIMIT = 20000;
 
 function getResListForDrawRatio(ratio) {
   return DRAW_RES_BY_RATIO[ratio] || DRAW_RES_BY_RATIO['1:1（正方形）'];
@@ -1365,10 +1385,6 @@ function renderGallery(){
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           批量下载 (${pickCount})
         </button>
-        <button id="batchDelete" class="h-8 px-3 rounded-lg bg-white border border-gray-200 text-[12px] text-red-600 hover:bg-red-50 hover:border-red-300 flex items-center gap-1.5">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-          批量删除 (${pickCount})
-        </button>
         <button id="batchClear" class="h-8 px-3 rounded-lg bg-white border border-gray-200 text-[12px] text-ink-500 hover:bg-gray-50 flex items-center gap-1.5">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           清空选择
@@ -1535,29 +1551,6 @@ function renderGallery(){
     b.innerHTML = '<svg class="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>下载中…';
     setTimeout(()=>{ b.innerHTML = orig; b.disabled = false; }, 1000);
   });
-  byId('batchDelete')?.addEventListener('click', ()=>{
-    const n = drawState.picked.size;
-    showConfirm({
-      title: `确认删除 ${n} 张图片？`,
-      message: '删除后将无法恢复，请确认是否继续。',
-      onOk: ()=>{
-        const groups = {};
-        drawState.picked.forEach(k=>{
-          const [rid, idxStr] = k.split('-');
-          (groups[rid] = groups[rid] || []).push(parseInt(idxStr,10));
-        });
-        Object.entries(groups).forEach(([rid, idxs])=>{
-          const rec = DRAW_RECORDS.find(r=>r.id===rid);
-          if (!rec) return;
-          const del = new Set(idxs);
-          rec.imgs = rec.imgs.filter((_,i)=>!del.has(i));
-        });
-        drawState.picked.clear();
-        renderGallery();
-      }
-    });
-  });
-
   // 单条记录删除（二次确认）
   wrap.querySelectorAll('[data-del-rec]').forEach(b=>{
     b.addEventListener('click',e=>{
@@ -1755,6 +1748,44 @@ function renderDrawSidebar(){
   });
 }
 
+function updateDrawPromptMeta(){
+  const promptEl = document.getElementById('drawPrompt');
+  const countEl = document.getElementById('drawPromptCount');
+  const tipEl = document.getElementById('drawPromptTip');
+  if (!promptEl || !countEl || !tipEl) return;
+  const len = promptEl.value.trim().length;
+  countEl.textContent = `${len} 字`;
+
+  countEl.classList.remove('text-ink-400','text-amber-500','text-red-500');
+  tipEl.classList.remove('text-ink-400','text-amber-600','text-red-500');
+
+  if (len > DRAW_PROMPT_HARD_LIMIT) {
+    countEl.classList.add('text-red-500');
+    tipEl.classList.add('text-red-500');
+    tipEl.textContent = '内容过长，请精简后再生成';
+    return;
+  }
+  if (len > DRAW_PROMPT_SOFT_LIMIT) {
+    countEl.classList.add('text-amber-500');
+    tipEl.classList.add('text-amber-600');
+    tipEl.textContent = '内容较长，建议控制在300字以内';
+    return;
+  }
+  countEl.classList.add('text-ink-400');
+  tipEl.classList.add('text-ink-400');
+  tipEl.textContent = '建议≤300字，效果更佳';
+}
+
+let toastTimer = null;
+function showToast(message = ''){
+  const el = document.getElementById('toast');
+  if (!el || !message) return;
+  el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg><span>${message}</span>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
 /* ---- 绑定 ---- */
 document.querySelectorAll('.mode-tile').forEach(t=>{
   t.addEventListener('click',()=>setMode(t.dataset.mode));
@@ -1776,6 +1807,13 @@ document.getElementById('favOnly').addEventListener('click', ()=>{
 });
 // 开始生成：轻量反馈
 document.getElementById('btnGenerate').addEventListener('click', ()=>{
+  const promptEl = document.getElementById('drawPrompt');
+  if (promptEl && promptEl.value.trim().length > DRAW_PROMPT_HARD_LIMIT) {
+    updateDrawPromptMeta();
+    promptEl.focus();
+    showToast('提示词内容过长，请精简后再试');
+    return;
+  }
   const b = document.getElementById('btnGenerate');
   const txt = b.textContent;
   b.textContent = '生成中…';
@@ -1786,6 +1824,8 @@ document.getElementById('btnGenerate').addEventListener('click', ()=>{
 /* 初始渲染 */
 renderGrid();
 renderSelectedChips();
+updateDrawPromptMeta();
+document.getElementById('drawPrompt')?.addEventListener('input', updateDrawPromptMeta);
 </script>
 </body>
 </html>
