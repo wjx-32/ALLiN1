@@ -370,6 +370,7 @@
     }
     .model-table-wrap table {
       min-width: 1880px;
+      table-layout: fixed;
     }
     .model-table-wrap th,
     .model-table-wrap td {
@@ -383,6 +384,9 @@
     .model-table-wrap td.sticky-col {
       position: sticky;
       left: 0;
+      width: 160px;
+      min-width: 160px;
+      max-width: 160px;
       z-index: 3;
       box-shadow: 1px 0 0 #eef1f7;
     }
@@ -390,6 +394,9 @@
     .model-table-wrap td.sticky-col-2 {
       position: sticky;
       left: 160px; /* 等于“模型名称”列宽 */
+      width: 170px;
+      min-width: 170px;
+      max-width: 170px;
       z-index: 3;
       box-shadow: 1px 0 0 #eef1f7;
     }
@@ -722,6 +729,12 @@
                   <option value="AI对话">AI对话</option>
                   <option value="AI绘图">AI绘图</option>
                 </select>
+                <span class="label">联网搜索</span>
+                <select id="modelQuerySearchSupport" class="select" style="min-width:100px;">
+                  <option value="">全部</option>
+                  <option value="支持">支持</option>
+                  <option value="不支持">不支持</option>
+                </select>
                 <span class="label">状态</span>
                 <select id="modelQueryEnabled" class="select" style="min-width:100px;">
                   <option value="">全部</option>
@@ -744,6 +757,7 @@
                       <th style="width:110px;">输入价格/MTokens</th>
                       <th style="width:110px;">输出价格/MTokens</th>
                       <th style="width:110px;">图片单价/张</th>
+                      <th style="width:80px;">联网搜索</th>
                       <th style="width:90px;">联网搜索/次</th>
                     <th style="width:120px;">使用业务范围</th>
                       <th style="width:170px;">模型标签</th>
@@ -1061,10 +1075,16 @@
               <span style="color:#7c8391;font-size:12px;margin-left:4px;">/MTokens</span>
             </span>
           </label>
-          <label class="model-form-item billing-token-field"><span>联网搜索：</span>
+          <div class="model-form-item full billing-token-field" id="modelSearchSupportRow">
+            <span>联网搜索：</span>
+            <label class="perm-item" style="margin-right:16px;"><input type="radio" name="modelSearchSupport" id="modelSearchSupportYes" value="支持" checked /> 支持</label>
+            <label class="perm-item"><input type="radio" name="modelSearchSupport" id="modelSearchSupportNo" value="不支持" /> 不支持</label>
+          </div>
+          <label class="model-form-item billing-token-field" id="modelSearchPriceRow"><span>联网搜索单价：</span>
             <span class="inline-field">
               <input id="modelSearchPriceInput" class="usage-input" placeholder="0.00" />
               <select id="modelSearchPriceCurrency" class="select"><option value="CNY">人民币</option><option value="USD">美元</option></select>
+              <span style="color:#7c8391;font-size:12px;margin-left:4px;">/次</span>
             </span>
           </label>
           <label class="model-form-item billing-image-field" style="display:none;"><span>图片单价：</span>
@@ -1205,6 +1225,7 @@
     const modelQueryType = document.getElementById('modelQueryType');
     const modelQueryTag = document.getElementById('modelQueryTag');
     const modelQueryBizScope = document.getElementById('modelQueryBizScope');
+    const modelQuerySearchSupport = document.getElementById('modelQuerySearchSupport');
     const modelQueryEnabled = document.getElementById('modelQueryEnabled');
     const modelTableBody = document.getElementById('modelTableBody');
     const modelCountText = document.getElementById('modelCountText');
@@ -1264,6 +1285,9 @@
     const modelOutputPriceInput = document.getElementById('modelOutputPriceInput');
     const modelInputPriceCurrency = document.getElementById('modelInputPriceCurrency');
     const modelOutputPriceCurrency = document.getElementById('modelOutputPriceCurrency');
+    const modelSearchSupportYes = document.getElementById('modelSearchSupportYes');
+    const modelSearchSupportNo = document.getElementById('modelSearchSupportNo');
+    const modelSearchPriceRow = document.getElementById('modelSearchPriceRow');
     const modelSearchPriceInput = document.getElementById('modelSearchPriceInput');
     const modelSearchPriceCurrency = document.getElementById('modelSearchPriceCurrency');
     const modelImagePriceInput = document.getElementById('modelImagePriceInput');
@@ -1311,17 +1335,17 @@
     let providerLogoValue = '';
     let editingModelTags = [];
     const modelRows = [
-      { id: 1, provider: 'Anthropic', name: 'claude-opus-4-5', code: 'claude-opus-4-5', billingMode: 'token', inputPriceValue: '5.50', inputPriceCurrency: 'USD', outputPriceValue: '27.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '适合高质量写作与深度对话；科研人员可用来写论文、综述长文献或拆解复杂问题。', enabled: '已启用' },
-      { id: 2, provider: 'Anthropic', name: 'claude-haiku-4-5', code: 'claude-haiku-4-5', billingMode: 'token', inputPriceValue: '1.10', inputPriceCurrency: 'USD', outputPriceValue: '5.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话', tags: '快速推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '响应极快，适合日常问答、课堂查资料；不适合深度科研或复杂写作。', enabled: '已启用' },
-      { id: 3, provider: 'Google', name: 'gemini-3-pro-preview', code: 'gemini-3-pro-preview', billingMode: 'token', inputPriceValue: '1.60', inputPriceCurrency: 'USD', outputPriceValue: '9.60', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，多模态，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '全能多模态大模型，支持图文语音；科研用户可用于分析实验图与生成报告。', enabled: '已启用' },
-      { id: 4, provider: '豆包', name: 'doubao-seedream-4-0', code: 'doubao-seedream-4-0', billingMode: 'image', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', imagePriceValue: '0.20', imagePriceCurrency: 'CNY', searchPriceValue: '0.00', searchPriceCurrency: 'CNY', bizScope: 'AI绘图', tags: '文生图，国内模型', type: '国内模型', recommended: '是', intro: '豆包图像生成模型，按图片数量计费，适合批量出图。', enabled: '已启用' }
+      { id: 1, provider: 'Anthropic', name: 'claude-opus-4-5', code: 'claude-opus-4-5', billingMode: 'token', inputPriceValue: '5.50', inputPriceCurrency: 'USD', outputPriceValue: '27.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '适合高质量写作与深度对话；科研人员可用来写论文、综述长文献或拆解复杂问题。', enabled: '已启用' },
+      { id: 2, provider: 'Anthropic', name: 'claude-haiku-4-5', code: 'claude-haiku-4-5', billingMode: 'token', inputPriceValue: '1.10', inputPriceCurrency: 'USD', outputPriceValue: '5.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话', tags: '快速推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '响应极快，适合日常问答、课堂查资料；不适合深度科研或复杂写作。', enabled: '已启用' },
+      { id: 3, provider: 'Google', name: 'gemini-3-pro-preview', code: 'gemini-3-pro-preview', billingMode: 'token', inputPriceValue: '1.60', inputPriceCurrency: 'USD', outputPriceValue: '9.60', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，多模态，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '全能多模态大模型，支持图文语音；科研用户可用于分析实验图与生成报告。', enabled: '已启用' },
+      { id: 4, provider: '豆包', name: 'doubao-seedream-4-0', code: 'doubao-seedream-4-0', billingMode: 'image', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', imagePriceValue: '0.20', imagePriceCurrency: 'CNY', searchSupport: '不支持', searchPriceValue: '0.00', searchPriceCurrency: 'CNY', bizScope: 'AI绘图', tags: '文生图，国内模型', type: '国内模型', recommended: '是', intro: '豆包图像生成模型，按图片数量计费，适合批量出图。', enabled: '已启用' }
     ];
     const modelModifyLogs = [
-      { time: '2026-04-28 14:58:11', operator: '李月明', action: '新增模型', remark: '模型：claude-opus-4-5｜CODE=claude-opus-4-5｜服务商=Anthropic｜输入价=$5.50/MTokens｜输出价=$27.50/MTokens｜联网搜索=$0.03｜业务范围=AI对话、AI绘图｜模型类型=海外模型、推理模型｜模型标签=深度推理/国外模型｜是否推荐=否｜状态=已启用' },
+      { time: '2026-04-28 14:58:11', operator: '李月明', action: '新增模型', remark: '模型：claude-opus-4-5｜CODE=claude-opus-4-5｜服务商=Anthropic｜输入价=$5.50/MTokens｜输出价=$27.50/MTokens｜联网搜索=支持｜联网搜索单价=$0.03/次｜业务范围=AI对话、AI绘图｜模型类型=海外模型、推理模型｜模型标签=深度推理/国外模型｜是否推荐=否｜状态=已启用' },
       { time: '2026-04-28 15:01:06', operator: '李月明', action: '编辑模型', remark: '模型：gemini-3-pro-preview｜字段变更：模型介绍：… → …；模型标签：深度推理 → 深度推理、多模态；模型类型：海外模型、推理模型 → 海外模型、推理模型、代码模型' },
       { time: '2026-04-28 15:03:40', operator: '丁真', action: '禁用模型', remark: '模型：doubao-seed-1-6-thinking-250615｜状态：已启用 → 已禁用' },
       { time: '2026-04-28 15:04:22', operator: '丁真', action: '启用模型', remark: '模型：doubao-seed-1-6-thinking-250615｜状态：已禁用 → 已启用' },
-      { time: '2026-04-28 15:06:15', operator: '李月明', action: '编辑模型', remark: '模型：claude-haiku-4-5｜字段变更：输入价：$1.10 → ￥7.80；输出价：$5.50 → ￥39.00；联网搜索：$0.03 → ￥0.20' },
+      { time: '2026-04-28 15:06:15', operator: '李月明', action: '编辑模型', remark: '模型：claude-haiku-4-5｜字段变更：输入价：$1.10 → ￥7.80；输出价：$5.50 → ￥39.00；联网搜索单价：$0.03 → ￥0.20' },
       { time: '2026-04-28 15:08:09', operator: '李月明', action: '删除模型', remark: '模型：gemini-3-pro-preview｜CODE=gemini-3-pro-preview｜服务商=Google' }
     ];
     const providerRows = [
@@ -1416,7 +1440,11 @@
           const inputCell = billingMode === 'image' ? '<span style="color:#9aa3b2;">-</span>' : escapeHtml(formatMoney(item.inputPriceValue, item.inputPriceCurrency));
           const outputCell = billingMode === 'image' ? '<span style="color:#9aa3b2;">-</span>' : escapeHtml(formatMoney(item.outputPriceValue, item.outputPriceCurrency));
           const imageCell = billingMode === 'image' ? escapeHtml(formatMoney(item.imagePriceValue, item.imagePriceCurrency)) : '<span style="color:#9aa3b2;">-</span>';
-          const searchCell = billingMode === 'image' ? '<span style="color:#9aa3b2;">-</span>' : escapeHtml(formatMoney(item.searchPriceValue, item.searchPriceCurrency));
+          const searchSupport = item.searchSupport || '不支持';
+          const searchSupportCell = escapeHtml(searchSupport);
+          const searchCell = billingMode === 'image' || searchSupport === '不支持'
+            ? '<span style="color:#9aa3b2;">-</span>'
+            : escapeHtml(formatMoney(item.searchPriceValue, item.searchPriceCurrency));
           const tagsArr = String(item.tags || '').split(/[，,]/).map((t) => t.trim()).filter(Boolean);
           const tagsHtml = tagsArr.length ? tagsArr.map((t) => ('<span class="model-badge">' + escapeHtml(t) + '</span>')).join('') : '<span style="color:#9aa3b2;">-</span>';
           return (
@@ -1428,6 +1456,7 @@
         '<td>' + inputCell + '</td>' +
         '<td>' + outputCell + '</td>' +
         '<td>' + imageCell + '</td>' +
+        '<td>' + searchSupportCell + '</td>' +
         '<td>' + searchCell + '</td>' +
         '<td>' + escapeHtml(item.bizScope || 'AI对话') + '</td>' +
         '<td>' + tagsHtml + '</td>' +
@@ -1447,6 +1476,7 @@
       const type = modelQueryType.value.trim();
       const tag = modelQueryTag.value.trim();
       const bizScope = modelQueryBizScope.value.trim();
+      const searchSupport = modelQuerySearchSupport.value.trim();
       const enabled = modelQueryEnabled.value.trim();
       return modelRows.filter((item) => {
         const okProvider = !provider || item.provider.includes(provider);
@@ -1454,8 +1484,9 @@
         const okType = !type || item.type.includes(type);
         const okTag = !tag || String(item.tags || '').includes(tag);
         const okBizScope = !bizScope || (item.bizScope || '').includes(bizScope);
+        const okSearchSupport = !searchSupport || (item.searchSupport || '不支持') === searchSupport;
         const okEnabled = !enabled || item.enabled === enabled;
-        return okProvider && okName && okType && okTag && okBizScope && okEnabled;
+        return okProvider && okName && okType && okTag && okBizScope && okSearchSupport && okEnabled;
       });
     }
     function renderProviderTable(rows) {
@@ -1489,16 +1520,26 @@
       modelListSection.classList.toggle('hidden', !modelActive);
       providerListSection.classList.toggle('hidden', modelActive);
     }
+    function applySearchSupportUI(support) {
+      const supported = support === '支持';
+      if (modelSearchPriceRow) modelSearchPriceRow.style.display = supported ? '' : 'none';
+    }
     function applyBillingModeUI(mode) {
       const isImage = mode === 'image';
-      document.querySelectorAll('.billing-token-field').forEach((el) => { el.style.display = isImage ? 'none' : ''; });
+      document.querySelectorAll('.billing-token-field').forEach((el) => {
+        if (el.id === 'modelSearchSupportRow') return;
+        el.style.display = isImage ? 'none' : '';
+      });
       document.querySelectorAll('.billing-image-field').forEach((el) => { el.style.display = isImage ? '' : 'none'; });
+      const searchSupportRow = document.getElementById('modelSearchSupportRow');
+      if (searchSupportRow) searchSupportRow.style.display = isImage ? 'none' : '';
+      if (!isImage) applySearchSupportUI(modelSearchSupportYes.checked ? '支持' : '不支持');
     }
     function openModelEditor(row) {
       const data = row || {
         provider: '', name: '', code: '', billingMode: 'token',
         inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY',
-        imagePriceValue: '0.00', imagePriceCurrency: 'CNY', searchPriceValue: '0.00', searchPriceCurrency: 'CNY',
+        imagePriceValue: '0.00', imagePriceCurrency: 'CNY', searchSupport: '支持', searchPriceValue: '0.00', searchPriceCurrency: 'CNY',
         bizScope: 'AI对话', tags: '', type: '', recommended: '否', intro: ''
       };
       editingModelId = row ? row.id : null;
@@ -1520,6 +1561,10 @@
       modelInputPriceCurrency.value = data.inputPriceCurrency || 'CNY';
       modelOutputPriceInput.value = data.outputPriceValue ?? '0.00';
       modelOutputPriceCurrency.value = data.outputPriceCurrency || 'CNY';
+      const searchSupport = data.searchSupport || '支持';
+      modelSearchSupportYes.checked = searchSupport === '支持';
+      modelSearchSupportNo.checked = searchSupport === '不支持';
+      applySearchSupportUI(searchSupport);
       modelSearchPriceInput.value = data.searchPriceValue ?? '0.00';
       modelSearchPriceCurrency.value = data.searchPriceCurrency || 'CNY';
       modelImagePriceInput.value = data.imagePriceValue ?? '0.00';
@@ -1610,6 +1655,7 @@
         return;
       }
       const billingMode = modelBillingImage.checked ? 'image' : 'token';
+      const searchSupport = billingMode === 'image' ? '不支持' : (modelSearchSupportYes.checked ? '支持' : '不支持');
       const payload = {
         provider: provider,
         name: name,
@@ -1621,7 +1667,8 @@
         outputPriceCurrency: modelOutputPriceCurrency.value,
         imagePriceValue: modelImagePriceInput.value.trim() || '0.00',
         imagePriceCurrency: modelImagePriceCurrency.value,
-        searchPriceValue: modelSearchPriceInput.value.trim() || '0.00',
+        searchSupport: searchSupport,
+        searchPriceValue: searchSupport === '支持' ? (modelSearchPriceInput.value.trim() || '0.00') : '0.00',
         searchPriceCurrency: modelSearchPriceCurrency.value,
         bizScope: bizScopes.join('、'),
         tags: editingModelTags.join('，') || '-',
@@ -1648,9 +1695,12 @@
         const imgBefore = moneyText(before.imagePriceValue, before.imagePriceCurrency);
         const imgAfter = moneyText(target.imagePriceValue, target.imagePriceCurrency);
         if (imgBefore !== imgAfter) changes.push('图片单价：' + imgBefore + '/张 → ' + imgAfter + '/张');
+        const ssBefore = before.searchSupport || '不支持';
+        const ssAfter = target.searchSupport || '不支持';
+        if (ssBefore !== ssAfter) changes.push('联网搜索：' + ssBefore + ' → ' + ssAfter);
         const sBefore = moneyText(before.searchPriceValue, before.searchPriceCurrency);
         const sAfter = moneyText(target.searchPriceValue, target.searchPriceCurrency);
-        if (sBefore !== sAfter) changes.push('联网搜索：' + sBefore + ' → ' + sAfter);
+        if (ssBefore === '支持' && ssAfter === '支持' && sBefore !== sAfter) changes.push('联网搜索单价：' + sBefore + '/次 → ' + sAfter + '/次');
         if (before.bizScope !== target.bizScope) changes.push('业务范围：' + before.bizScope + ' → ' + target.bizScope);
         if (before.type !== target.type) changes.push('模型类型：' + before.type + ' → ' + target.type);
         if (before.tags !== target.tags) changes.push('模型标签：' + before.tags + ' → ' + target.tags);
@@ -1664,7 +1714,8 @@
           ? '｜图片单价=' + moneyText(payload.imagePriceValue, payload.imagePriceCurrency) + '/张'
           : '｜输入价=' + moneyText(payload.inputPriceValue, payload.inputPriceCurrency) + '/MTokens' +
             '｜输出价=' + moneyText(payload.outputPriceValue, payload.outputPriceCurrency) + '/MTokens' +
-            '｜联网搜索=' + moneyText(payload.searchPriceValue, payload.searchPriceCurrency);
+            '｜联网搜索=' + payload.searchSupport +
+            (payload.searchSupport === '支持' ? ('｜联网搜索单价=' + moneyText(payload.searchPriceValue, payload.searchPriceCurrency) + '/次') : '');
         pushModelLog('新增模型',
           '模型：' + payload.name +
           '｜CODE=' + payload.code +
@@ -1764,6 +1815,7 @@
       modelQueryType.value = '';
       modelQueryTag.value = '';
       modelQueryBizScope.value = '';
+      modelQuerySearchSupport.value = '';
       modelQueryEnabled.value = '';
       setModelProviderFilterOptions('');
       renderModelTable(modelRows);
@@ -1855,6 +1907,8 @@
     modelEditorConfirm.addEventListener('click', saveModel);
     modelBillingToken.addEventListener('change', () => applyBillingModeUI('token'));
     modelBillingImage.addEventListener('change', () => applyBillingModeUI('image'));
+    modelSearchSupportYes.addEventListener('change', () => applySearchSupportUI('支持'));
+    modelSearchSupportNo.addEventListener('change', () => applySearchSupportUI('不支持'));
     modelTagAddBtn.addEventListener('click', () => {
       addModelTag(modelTagInput.value);
       modelTagInput.value = '';
