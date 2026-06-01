@@ -760,6 +760,7 @@
                       <th style="width:80px;">联网搜索</th>
                       <th style="width:90px;">联网搜索/次</th>
                     <th style="width:120px;">使用业务范围</th>
+                    <th style="width:110px;">支持参考图</th>
                       <th style="width:170px;">模型标签</th>
                       <th style="width:130px;">模型类型</th>
                     <th style="width:70px;">是否推荐</th>
@@ -1099,6 +1100,11 @@
             <label class="perm-item" style="margin-right:16px;"><input type="checkbox" id="modelBizChatInput" checked /> AI对话</label>
             <label class="perm-item"><input type="checkbox" id="modelBizDrawInput" /> AI绘图</label>
           </div>
+          <div class="model-form-item full" id="modelRefSupportRow" style="display:none;">
+            <span>支持参考图：</span>
+            <label class="perm-item" style="margin-right:16px;"><input type="radio" name="modelRefSupport" id="modelRefSupportYes" value="支持" checked /> 支持</label>
+            <label class="perm-item"><input type="radio" name="modelRefSupport" id="modelRefSupportNo" value="不支持" /> 不支持</label>
+          </div>
           <label class="model-form-item"><span>模型推荐：</span><select id="modelRecommendedInput" class="select"><option>否</option><option>是</option></select></label>
           <div class="model-form-item full" style="align-items:flex-start;">
             <span>模型标签：</span>
@@ -1296,6 +1302,9 @@
     const modelBillingImage = document.getElementById('modelBillingImage');
     const modelBizChatInput = document.getElementById('modelBizChatInput');
     const modelBizDrawInput = document.getElementById('modelBizDrawInput');
+    const modelRefSupportRow = document.getElementById('modelRefSupportRow');
+    const modelRefSupportYes = document.getElementById('modelRefSupportYes');
+    const modelRefSupportNo = document.getElementById('modelRefSupportNo');
     const modelRecommendedInput = document.getElementById('modelRecommendedInput');
     const modelTagInput = document.getElementById('modelTagInput');
     const modelTagAddBtn = document.getElementById('modelTagAddBtn');
@@ -1335,10 +1344,10 @@
     let providerLogoValue = '';
     let editingModelTags = [];
     const modelRows = [
-      { id: 1, provider: 'Anthropic', name: 'claude-opus-4-5', code: 'claude-opus-4-5', billingMode: 'token', inputPriceValue: '5.50', inputPriceCurrency: 'USD', outputPriceValue: '27.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '适合高质量写作与深度对话；科研人员可用来写论文、综述长文献或拆解复杂问题。', enabled: '已启用' },
-      { id: 2, provider: 'Anthropic', name: 'claude-haiku-4-5', code: 'claude-haiku-4-5', billingMode: 'token', inputPriceValue: '1.10', inputPriceCurrency: 'USD', outputPriceValue: '5.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话', tags: '快速推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '响应极快，适合日常问答、课堂查资料；不适合深度科研或复杂写作。', enabled: '已启用' },
-      { id: 3, provider: 'Google', name: 'gemini-3-pro-preview', code: 'gemini-3-pro-preview', billingMode: 'token', inputPriceValue: '1.60', inputPriceCurrency: 'USD', outputPriceValue: '9.60', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', tags: '深度推理，多模态，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '全能多模态大模型，支持图文语音；科研用户可用于分析实验图与生成报告。', enabled: '已启用' },
-      { id: 4, provider: '豆包', name: 'doubao-seedream-4-0', code: 'doubao-seedream-4-0', billingMode: 'image', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', imagePriceValue: '0.20', imagePriceCurrency: 'CNY', searchSupport: '不支持', searchPriceValue: '0.00', searchPriceCurrency: 'CNY', bizScope: 'AI绘图', tags: '文生图，国内模型', type: '国内模型', recommended: '是', intro: '豆包图像生成模型，按图片数量计费，适合批量出图。', enabled: '已启用' }
+      { id: 1, provider: 'Anthropic', name: 'claude-opus-4-5', code: 'claude-opus-4-5', billingMode: 'token', inputPriceValue: '5.50', inputPriceCurrency: 'USD', outputPriceValue: '27.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', refImageSupport: '-', tags: '深度推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '适合高质量写作与深度对话；科研人员可用来写论文、综述长文献或拆解复杂问题。', enabled: '已启用' },
+      { id: 2, provider: 'Anthropic', name: 'claude-haiku-4-5', code: 'claude-haiku-4-5', billingMode: 'token', inputPriceValue: '1.10', inputPriceCurrency: 'USD', outputPriceValue: '5.50', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话', refImageSupport: '-', tags: '快速推理，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '响应极快，适合日常问答、课堂查资料；不适合深度科研或复杂写作。', enabled: '已启用' },
+      { id: 3, provider: 'Google', name: 'gemini-3-pro-preview', code: 'gemini-3-pro-preview', billingMode: 'token', inputPriceValue: '1.60', inputPriceCurrency: 'USD', outputPriceValue: '9.60', outputPriceCurrency: 'USD', imagePriceValue: '0.00', imagePriceCurrency: 'USD', searchSupport: '支持', searchPriceValue: '0.03', searchPriceCurrency: 'USD', bizScope: 'AI对话、AI绘图', refImageSupport: '-', tags: '深度推理，多模态，国外模型', type: '推理模型,国外模型', recommended: '否', intro: '全能多模态大模型，支持图文语音；科研用户可用于分析实验图与生成报告。', enabled: '已启用' },
+      { id: 4, provider: '豆包', name: 'doubao-seedream-4-0', code: 'doubao-seedream-4-0', billingMode: 'image', inputPriceValue: '0.00', inputPriceCurrency: 'CNY', outputPriceValue: '0.00', outputPriceCurrency: 'CNY', imagePriceValue: '0.20', imagePriceCurrency: 'CNY', searchSupport: '不支持', searchPriceValue: '0.00', searchPriceCurrency: 'CNY', bizScope: 'AI绘图', refImageSupport: '支持', tags: '文生图，国内模型', type: '国内模型,生图模型', recommended: '是', intro: '豆包图像生成模型，按图片数量计费，适合批量出图。', enabled: '已启用' }
     ];
     const modelModifyLogs = [
       { time: '2026-04-28 14:58:11', operator: '李月明', action: '新增模型', remark: '模型：claude-opus-4-5｜CODE=claude-opus-4-5｜服务商=Anthropic｜输入价=$5.50/MTokens｜输出价=$27.50/MTokens｜联网搜索=支持｜联网搜索单价=$0.03/次｜业务范围=AI对话、AI绘图｜模型类型=海外模型、推理模型｜模型标签=深度推理/国外模型｜是否推荐=否｜状态=已启用' },
@@ -1459,6 +1468,7 @@
         '<td>' + searchSupportCell + '</td>' +
         '<td>' + searchCell + '</td>' +
         '<td>' + escapeHtml(item.bizScope || 'AI对话') + '</td>' +
+        '<td>' + escapeHtml(item.refImageSupport || '-') + '</td>' +
         '<td>' + tagsHtml + '</td>' +
         '<td>' + escapeHtml(item.type) + '</td>' +
         '<td>' + escapeHtml(item.recommended) + '</td>' +
@@ -1535,6 +1545,20 @@
       if (searchSupportRow) searchSupportRow.style.display = isImage ? 'none' : '';
       if (!isImage) applySearchSupportUI(modelSearchSupportYes.checked ? '支持' : '不支持');
     }
+    function isImageOnlyModel(types) {
+      return types.includes('生图模型') && !types.includes('大语言模型');
+    }
+    function applyRefSupportUI() {
+      const types = [];
+      if (modelTypeOversea.checked) types.push('海外模型');
+      if (modelTypeDomestic.checked) types.push('国内模型');
+      if (modelTypeReasoning.checked) types.push('推理模型');
+      if (modelTypeLLM.checked) types.push('大语言模型');
+      if (modelTypeImage.checked) types.push('生图模型');
+      if (modelTypeCode.checked) types.push('代码能力');
+      const show = isImageOnlyModel(types);
+      if (modelRefSupportRow) modelRefSupportRow.style.display = show ? '' : 'none';
+    }
     function openModelEditor(row) {
       const data = row || {
         provider: '', name: '', code: '', billingMode: 'token',
@@ -1571,6 +1595,10 @@
       modelImagePriceCurrency.value = data.imagePriceCurrency || 'CNY';
       modelBizChatInput.checked = (data.bizScope || '').includes('AI对话');
       modelBizDrawInput.checked = (data.bizScope || '').includes('AI绘图');
+      const refSupport = data.refImageSupport || '支持';
+      modelRefSupportYes.checked = refSupport !== '不支持';
+      modelRefSupportNo.checked = refSupport === '不支持';
+      applyRefSupportUI();
       modelRecommendedInput.value = data.recommended;
       editingModelTags = (data.tags || '').split(/[，,]/).map((t) => normalizeTag(t)).filter(Boolean);
       renderModelTagChips();
@@ -1671,6 +1699,7 @@
         searchPriceValue: searchSupport === '支持' ? (modelSearchPriceInput.value.trim() || '0.00') : '0.00',
         searchPriceCurrency: modelSearchPriceCurrency.value,
         bizScope: bizScopes.join('、'),
+        refImageSupport: isImageOnlyModel(types) ? (modelRefSupportYes.checked ? '支持' : '不支持') : '-',
         tags: editingModelTags.join('，') || '-',
         type: types.join('、'),
         recommended: modelRecommendedInput.value,
@@ -1702,6 +1731,7 @@
         const sAfter = moneyText(target.searchPriceValue, target.searchPriceCurrency);
         if (ssBefore === '支持' && ssAfter === '支持' && sBefore !== sAfter) changes.push('联网搜索单价：' + sBefore + '/次 → ' + sAfter + '/次');
         if (before.bizScope !== target.bizScope) changes.push('业务范围：' + before.bizScope + ' → ' + target.bizScope);
+        if ((before.refImageSupport || '-') !== (target.refImageSupport || '-')) changes.push('支持参考图：' + (before.refImageSupport || '-') + ' → ' + (target.refImageSupport || '-'));
         if (before.type !== target.type) changes.push('模型类型：' + before.type + ' → ' + target.type);
         if (before.tags !== target.tags) changes.push('模型标签：' + before.tags + ' → ' + target.tags);
         if (before.recommended !== target.recommended) changes.push('是否推荐：' + before.recommended + ' → ' + target.recommended);
@@ -1723,6 +1753,7 @@
           '｜计费方式=' + (payload.billingMode === 'image' ? '按图片数量计费' : '按Token计费') +
           priceDesc +
           '｜业务范围=' + payload.bizScope +
+          (payload.refImageSupport !== '-' ? ('｜支持参考图=' + payload.refImageSupport) : '') +
           '｜模型类型=' + payload.type +
           '｜模型标签=' + payload.tags +
           '｜是否推荐=' + payload.recommended +
@@ -1907,6 +1938,9 @@
     modelEditorConfirm.addEventListener('click', saveModel);
     modelBillingToken.addEventListener('change', () => applyBillingModeUI('token'));
     modelBillingImage.addEventListener('change', () => applyBillingModeUI('image'));
+    [modelTypeOversea, modelTypeDomestic, modelTypeReasoning, modelTypeLLM, modelTypeImage, modelTypeCode].forEach((el) => {
+      el.addEventListener('change', applyRefSupportUI);
+    });
     modelSearchSupportYes.addEventListener('change', () => applySearchSupportUI('支持'));
     modelSearchSupportNo.addEventListener('change', () => applySearchSupportUI('不支持'));
     modelTagAddBtn.addEventListener('click', () => {
