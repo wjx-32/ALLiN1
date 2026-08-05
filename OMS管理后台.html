@@ -1504,6 +1504,25 @@
                   保存后写入 <code>allin1_oms_platform_chat</code>，用户端「活动赠送积分 · 每日领取」卡片自动读取。
                 </div>
               </div>
+              <div class="platform-config-block">
+                <div class="model-form-item full credit-config-divider" style="border-top:none;padding-top:0;margin-top:0;">
+                  <span class="platform-section-title">AI PPT 积分扣减</span>
+                </div>
+                <div class="platform-config-hint" style="margin-left:0;margin-bottom:10px;">
+                  <b>扣费节点</b>：仅在「生成大纲」成功时扣减 1 次；编辑大纲、选模板、生成 PPT、进入编辑器 / 美化 / 下载等后续操作不另扣。<br>
+                  不按页数分档，全平台统一「积分/次」。页数仍可作为生成参数由用户选择，不影响扣费。
+                </div>
+                <div class="ppt-credit-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:480px;">
+                  <label class="ppt-credit-item">生成大纲<input type="number" id="pptOutlineCreditInput" class="usage-input" min="1" max="9999" value="20">积分/次</label>
+                </div>
+                <div class="platform-config-actions" style="margin-left:0;margin-top:10px;">
+                  <button type="button" class="btn primary" id="btnSavePptOutlineCredit">保存 AI PPT 积分</button>
+                  <button type="button" class="btn" id="btnResetPptOutlineCredit">恢复默认</button>
+                </div>
+                <div class="platform-sync-tip">
+                  保存后写入 <code>allin1_oms_model_credits</code>（字段 <code>pptOutlineCredit</code>），用户端 AI PPT 首页「预计消耗」自动同步。
+                </div>
+              </div>
             </div>
             <div class="footer">cms-web ©2025 Created by ruijing</div>
           </section>
@@ -2457,13 +2476,15 @@
     ];
     let featuredPromptRows = DEFAULT_FEATURED_PROMPTS.map((item) => Object.assign({}, item));
     let featuredPromptEditingId = null;
+    const DEFAULT_PPT_OUTLINE_CREDIT = 20;
+    let pptOutlineCredit = DEFAULT_PPT_OUTLINE_CREDIT;
+    /** @deprecated 兼容旧版「按页数档位」本地数据，仅用于迁移读取，不再提供档位编辑 UI */
     const DEFAULT_PPT_PAGE_TIERS = [
       { id: 'ppt-tier-1', minPages: 8, maxPages: 10, credits: 15 },
       { id: 'ppt-tier-2', minPages: 10, maxPages: 15, credits: 20 },
       { id: 'ppt-tier-3', minPages: 15, maxPages: 20, credits: 28 },
       { id: 'ppt-tier-4', minPages: 20, maxPages: 30, credits: 40 },
     ];
-    let pptTierRows = DEFAULT_PPT_PAGE_TIERS.map((item) => Object.assign({}, item));
     const DEFAULT_CLIENT_MODEL_CREDITS = [
       { code: "claude-opus-4-8", creditCost: 8, creditUnit: "call", name: "Claude-4.8-Opus" },
       { code: "claude-opus-4-7", creditCost: 8, creditUnit: "call", name: "Claude-4.7-Opus" },
@@ -2554,6 +2575,9 @@
     const monthlyCreditsPersonalInput = document.getElementById('monthlyCreditsPersonalInput');
     const btnSaveMonthlyCredits = document.getElementById('btnSaveMonthlyCredits');
     const btnResetMonthlyCredits = document.getElementById('btnResetMonthlyCredits');
+    const pptOutlineCreditInput = document.getElementById('pptOutlineCreditInput');
+    const btnSavePptOutlineCredit = document.getElementById('btnSavePptOutlineCredit');
+    const btnResetPptOutlineCredit = document.getElementById('btnResetPptOutlineCredit');
     const unitTableBody = document.getElementById('unitTableBody');
     const unitSigninModalMask = document.getElementById('unitSigninModalMask');
     const unitSigninModalTitle = document.getElementById('unitSigninModalTitle');
@@ -3171,71 +3195,6 @@
       if (!Number.isFinite(p)) return 0;
       return currency === 'USD' ? p * USD_TO_CNY : p;
     }
-    function pptTierLabel(tier) {
-      return tier.minPages + '-' + tier.maxPages + ' 页';
-    }
-    function sortPptTiers(tiers) {
-      return tiers.slice().sort((a, b) => a.minPages - b.minPages || a.maxPages - b.maxPages);
-    }
-    function pptCostsFromTiers(tiers) {
-      const costs = {};
-      sortPptTiers(tiers).forEach((tier) => {
-        costs[pptTierLabel(tier)] = Number(tier.credits) || 0;
-      });
-      return costs;
-    }
-    function pptTiersFromCosts(costs) {
-      return sortPptTiers(Object.entries(costs || {}).map(([label, credits], index) => {
-        const matched = String(label).match(/(\d+)\s*-\s*(\d+)/);
-        return {
-          id: 'ppt-tier-' + (index + 1),
-          minPages: matched ? parseInt(matched[1], 10) : 1,
-          maxPages: matched ? parseInt(matched[2], 10) : 1,
-          credits: Number(credits) || 1,
-        };
-      }));
-    }
-    function validatePptTiers(tiers) {
-      if (!tiers.length) {
-        alert('请至少保留一个页数档位');
-        return false;
-      }
-      for (let i = 0; i < tiers.length; i += 1) {
-        const tier = tiers[i];
-        if (!Number.isFinite(tier.minPages) || !Number.isFinite(tier.maxPages) || tier.minPages <= 0 || tier.maxPages <= 0) {
-          alert('第 ' + (i + 1) + ' 行：请填写有效的起始页与结束页（正整数）');
-          return false;
-        }
-        if (tier.minPages > tier.maxPages) {
-          alert('第 ' + (i + 1) + ' 行：起始页不能大于结束页');
-          return false;
-        }
-        if (!Number.isFinite(tier.credits) || tier.credits <= 0) {
-          alert('第 ' + (i + 1) + ' 行：请填写有效的积分（正整数）');
-          return false;
-        }
-      }
-      return true;
-    }
-    function renderPptTierForm() {
-      /* 本期 OMS 暂不做 PPT 积分配置，表单已下线 */
-    }
-    function readPptTiersFromForm() {
-      return sortPptTiers(pptTierRows.map((item) => Object.assign({}, item)));
-    }
-    function fillPptTierForm(tiers) {
-      pptTierRows = sortPptTiers((tiers || DEFAULT_PPT_PAGE_TIERS).map((item) => Object.assign({}, item)));
-    }
-    function loadPptPageTiers() {
-      const saved = loadModelCreditsConfig();
-      if (saved && Array.isArray(saved.pptPageTiers) && saved.pptPageTiers.length) {
-        return sortPptTiers(saved.pptPageTiers.map((item) => Object.assign({}, item)));
-      }
-      if (saved && saved.pptPageCosts) {
-        return pptTiersFromCosts(Object.assign({}, pptCostsFromTiers(DEFAULT_PPT_PAGE_TIERS), saved.pptPageCosts));
-      }
-      return DEFAULT_PPT_PAGE_TIERS.map((item) => Object.assign({}, item));
-    }
     function loadModelCreditsConfig() {
       try {
         const raw = JSON.parse(localStorage.getItem(OMS_MODEL_CREDITS_KEY) || 'null');
@@ -3243,6 +3202,36 @@
       } catch {
         return null;
       }
+    }
+    function migratePptOutlineCreditFromLegacy(saved) {
+      if (!saved || typeof saved !== 'object') return null;
+      if (Number(saved.pptOutlineCredit) > 0) return Math.round(Number(saved.pptOutlineCredit));
+      if (Array.isArray(saved.pptPageTiers) && saved.pptPageTiers.length) {
+        const credits = saved.pptPageTiers.map((t) => Number(t && t.credits)).filter((n) => Number.isFinite(n) && n > 0);
+        if (credits.length) return Math.round(Math.min.apply(null, credits));
+      }
+      if (saved.pptPageCosts && typeof saved.pptPageCosts === 'object') {
+        const credits = Object.values(saved.pptPageCosts).map(Number).filter((n) => Number.isFinite(n) && n > 0);
+        if (credits.length) return Math.round(Math.min.apply(null, credits));
+      }
+      return null;
+    }
+    function loadPptOutlineCredit() {
+      const migrated = migratePptOutlineCreditFromLegacy(loadModelCreditsConfig());
+      return migrated != null ? migrated : DEFAULT_PPT_OUTLINE_CREDIT;
+    }
+    function fillPptOutlineCreditForm(credit) {
+      pptOutlineCredit = Number(credit) > 0 ? Math.round(Number(credit)) : DEFAULT_PPT_OUTLINE_CREDIT;
+      if (pptOutlineCreditInput) pptOutlineCreditInput.value = String(pptOutlineCredit);
+    }
+    function readPptOutlineCreditFromForm() {
+      const value = parseInt(pptOutlineCreditInput && pptOutlineCreditInput.value, 10);
+      if (!Number.isFinite(value) || value < 1 || value > 9999) {
+        alert('请填写有效的生成大纲积分（1–9999 的正整数）');
+        if (pptOutlineCreditInput) pptOutlineCreditInput.focus();
+        return null;
+      }
+      return value;
     }
     function buildModelCreditsPayload() {
       const map = Object.fromEntries(DEFAULT_CLIENT_MODEL_CREDITS.map((item) => [item.code.toLowerCase(), Object.assign({}, item)]));
@@ -3272,11 +3261,7 @@
         }
         map[row.code.toLowerCase()] = Object.assign(map[row.code.toLowerCase()] || {}, entry);
       });
-      const saved = loadModelCreditsConfig();
-      const pptPageTiers = saved && Array.isArray(saved.pptPageTiers) && saved.pptPageTiers.length
-        ? sortPptTiers(saved.pptPageTiers.map((item) => Object.assign({}, item)))
-        : DEFAULT_PPT_PAGE_TIERS.map((item) => Object.assign({}, item));
-      const pptPageCosts = pptCostsFromTiers(pptPageTiers);
+      const outlineCredit = Number(pptOutlineCredit) > 0 ? Math.round(Number(pptOutlineCredit)) : DEFAULT_PPT_OUTLINE_CREDIT;
       return {
         models: Object.values(map).filter((item) => (item.chatCreditCost > 0 || item.drawCreditCost > 0 || item.creditCost > 0)).sort((a, b) => {
           const providerDiff = providerSortRank(a.provider) - providerSortRank(b.provider);
@@ -3288,8 +3273,10 @@
           sortOrder: sortOrderValue(item.sortOrder),
           logo: item.logo || '',
         })),
-        pptPageTiers: pptPageTiers,
-        pptPageCosts: pptPageCosts,
+        pptOutlineCredit: outlineCredit,
+        // 兼容旧用户端：不再按页数分档计价，保留空结构避免读到脏档位
+        pptPageTiers: [],
+        pptPageCosts: {},
         updatedAt: Date.now(),
       };
     }
@@ -3297,9 +3284,6 @@
       const payload = buildModelCreditsPayload();
       localStorage.setItem(OMS_MODEL_CREDITS_KEY, JSON.stringify(payload));
       localStorage.setItem('allin1_oms_sync_at', String(Date.now()));
-    }
-    function loadPptPageCosts() {
-      return pptCostsFromTiers(loadPptPageTiers());
     }
     function nowDateTime() {
       const d = new Date();
@@ -4245,6 +4229,7 @@
       fillChatContextForm(cfg);
       fillDailySigninForm(cfg);
       fillMonthlyCreditsForm(cfg);
+      fillPptOutlineCreditForm(loadPptOutlineCredit());
     }
     function fillChatContextForm(config) {
       const cfg = (config && config.chatContext) ? config.chatContext : DEFAULT_PLATFORM_CONFIG.chatContext;
@@ -4810,6 +4795,31 @@
       pushPlatformLog('恢复基础积分默认', '单位/个人版均为 1000 积分/月，已开启');
       alert('已恢复默认：单位/个人版均为 1000 积分/月，已开启');
     });
+    if (btnSavePptOutlineCredit) {
+      btnSavePptOutlineCredit.addEventListener('click', () => {
+        const credit = readPptOutlineCreditFromForm();
+        if (credit == null) return;
+        const before = pptOutlineCredit;
+        pptOutlineCredit = credit;
+        syncModelCreditsToClient();
+        fillPptOutlineCreditForm(credit);
+        pushPlatformLog(
+          '修改 AI PPT 积分扣减',
+          '生成大纲：' + before + ' → ' + credit + ' 积分/次（仅生成大纲成功扣费）'
+        );
+        alert('AI PPT 积分已保存，用户端将自动生效');
+      });
+    }
+    if (btnResetPptOutlineCredit) {
+      btnResetPptOutlineCredit.addEventListener('click', () => {
+        if (!confirm('确定恢复 AI PPT 积分为默认（生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次）？')) return;
+        pptOutlineCredit = DEFAULT_PPT_OUTLINE_CREDIT;
+        syncModelCreditsToClient();
+        fillPptOutlineCreditForm(DEFAULT_PPT_OUTLINE_CREDIT);
+        pushPlatformLog('恢复 AI PPT 积分默认', '生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次（仅生成大纲成功扣费）');
+        alert('已恢复默认：生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次');
+      });
+    }
     modelTabModelList.addEventListener('click', () => {
       switchModelTab('model');
     });
@@ -5258,6 +5268,8 @@
     renderProviderLogs();
     renderPlatformLogs();
     renderPromptLogs();
+    pptOutlineCredit = loadPptOutlineCredit();
+    fillPptOutlineCreditForm(pptOutlineCredit);
     syncModelCreditsToClient();
     syncUnitConfigToClient();
   </script>

@@ -301,7 +301,12 @@ body {
 .usage-tag.chat { background:#EEF0FF; color:#5B67F5; }
 .usage-tag.draw { background:#E8FBF1; color:#10B981; }
 .usage-tag.ppt { background:#FFF4E6; color:#D97706; }
-.ppt-cost-hint { font-size:12px; color:#9CA3AF; text-align:right; margin-top:6px; }
+.ppt-send-row {
+  display:flex; align-items:center; justify-content:flex-end; gap:10px;
+  flex-shrink:0;
+}
+.ppt-send-row--block { width:100%; margin-top:14px; }
+.ppt-cost-hint { font-size:12px; color:#9CA3AF; white-space:nowrap; margin:0; line-height:1; }
 .ppt-cost-hint b { color:#5B67F5; font-weight:600; }
 .usage-foot { padding:12px 22px 16px; font-size:11px; color:#9CA3AF; border-top:1px solid #F0F1F5; }
 .usage-pager {
@@ -375,6 +380,17 @@ body {
 .profile-wechat-name { font-size:14px; color:#111827; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .profile-phone-edit { display:flex; flex-direction:column; gap:10px; width:100%; }
 .profile-phone-edit .profile-row { gap:8px; }
+.profile-verify-tag {
+  flex-shrink:0; font-size:11px; line-height:1; padding:4px 8px; border-radius:999px;
+  background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;
+}
+.profile-verify-tag.off {
+  background:#F3F4F6; color:#6B7280; border-color:#E5E7EB;
+}
+.profile-step-hint {
+  font-size:12px; color:#6B7280; line-height:1.5; padding:2px 0 2px;
+}
+.profile-step-hint b { color:#111827; font-weight:600; }
 .profile-sms-btn {
   flex-shrink:0; height:38px; padding:0 12px; border:1px solid #E5E7EB; border-radius:10px;
   background:#fff; font-size:12px; color:#374151; cursor:pointer; white-space:nowrap;
@@ -800,7 +816,7 @@ input[type=file] { display:none; }
   display:flex; align-items:center; justify-content:space-between;
   padding:8px 0 12px; gap:10px; flex-wrap:wrap; overflow:visible;
 }
-.mode-char { font-size:11px; color:#bbb; margin-left:auto; }
+.mode-char { font-size:11px; color:#bbb; }
 
 .upload-zone {
   border:2px dashed #ddd; border-radius:12px; padding:36px 20px; text-align:center;
@@ -899,13 +915,8 @@ input[type=file] { display:none; }
 .link-panel { padding:16px 18px 20px; }
 .link-panel .mode-textarea { min-height:140px; border:1px solid #ececf2; border-radius:12px; padding:12px 14px; }
 
-.single-panel { padding:8px 0 4px; }
-.single-panel .greeting-sub { margin-bottom:20px; text-align:center; }
-.single-input-wrap {
-  border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:14px 16px;
-  box-shadow:0 2px 12px rgba(0,0,0,.05);
-}
-.single-input-wrap .mode-textarea { min-height:72px; }
+.single-panel { padding:16px 18px 4px; }
+.single-panel .mode-textarea { min-height:140px; }
 
 .config-bar {
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
@@ -2276,14 +2287,13 @@ svg { display:inline-block; vertical-align:middle; }
     <div id="step-home" class="step-home ai-create-home">
       <div class="ai-create-header">
         <h1>使用 AI 创建</h1>
-        <p>您想如何创建？只需输入主题或选择以下选项之一，您的演示文稿将在几秒钟内准备好</p>
+        <p>你想如何创建？只需输入主题或选择以下选项之一，你的演示文稿将在几秒钟内准备好</p>
       </div>
 
       <div class="mode-cards" id="mode-cards"></div>
 
       <div class="mode-panel-wrap">
         <div class="mode-panel" id="mode-panel"></div>
-        <div class="ppt-cost-hint" id="ppt-cost-hint" style="text-align:left;margin-top:10px"></div>
       </div>
 
       <div class="api-flow-bar" id="api-flow-bar">
@@ -2385,7 +2395,7 @@ svg { display:inline-block; vertical-align:middle; }
 
 <!-- draw settings popup -->
 <div class="popup draw-set-pop hidden" id="draw-set-popup">
-  <div class="draw-set-hint">不同模型支持参数不同，已为您展示通用配置。</div>
+  <div class="draw-set-hint">不同模型支持参数不同，已为你展示通用配置。</div>
   <div class="draw-set-sec">
     <div class="draw-set-label">单模型生成数量</div>
     <div class="draw-set-row" id="draw-count-row"></div>
@@ -2625,15 +2635,28 @@ svg { display:inline-block; vertical-align:middle; }
         <div id="profile-phone-view">
           <div class="profile-row">
             <span class="profile-val" id="profile-phone-display">138****8000</span>
+            <span class="profile-verify-tag" id="profile-phone-tag">已验证</span>
             <button type="button" class="profile-link-btn" onclick="startPhoneEdit()">修改</button>
           </div>
         </div>
+        <div class="profile-phone-edit hidden" id="profile-phone-verify">
+          <div class="profile-step-hint">请先验证当前手机号 <b id="profile-phone-old-mask">138****8000</b></div>
+          <div class="profile-row">
+            <input class="profile-input" id="profile-phone-old-code" type="text" maxlength="6" placeholder="原手机号验证码">
+            <button type="button" class="profile-sms-btn" id="profile-phone-old-sms-btn" onclick="sendProfileSms('phone-old')">获取验证码</button>
+          </div>
+          <div class="profile-row" style="justify-content:flex-end">
+            <button type="button" class="profile-link-btn" onclick="cancelPhoneEdit()">取消</button>
+            <button type="button" class="profile-link-btn" onclick="confirmPhoneOldVerify()">下一步</button>
+          </div>
+        </div>
         <div class="profile-phone-edit hidden" id="profile-phone-edit">
+          <div class="profile-step-hint" id="profile-phone-new-hint">请输入新手机号并完成验证</div>
           <div class="profile-row">
             <input class="profile-input" id="profile-phone-new" type="tel" maxlength="11" placeholder="新手机号">
           </div>
           <div class="profile-row">
-            <input class="profile-input" id="profile-phone-code" type="text" maxlength="6" placeholder="验证码">
+            <input class="profile-input" id="profile-phone-code" type="text" maxlength="6" placeholder="新手机号验证码">
             <button type="button" class="profile-sms-btn" id="profile-sms-btn" onclick="sendProfileSms('phone')">获取验证码</button>
           </div>
           <div class="profile-row" style="justify-content:flex-end">
@@ -2647,15 +2670,28 @@ svg { display:inline-block; vertical-align:middle; }
         <div id="profile-email-view">
           <div class="profile-row">
             <span class="profile-val" id="profile-email-display">wa****@rjm.cn</span>
+            <span class="profile-verify-tag" id="profile-email-tag">已验证</span>
             <button type="button" class="profile-link-btn" onclick="startEmailEdit()">修改</button>
           </div>
         </div>
+        <div class="profile-phone-edit hidden" id="profile-email-verify">
+          <div class="profile-step-hint">请先验证当前邮箱 <b id="profile-email-old-mask">wa****@rjm.cn</b></div>
+          <div class="profile-row">
+            <input class="profile-input" id="profile-email-old-code" type="text" maxlength="6" placeholder="原邮箱验证码">
+            <button type="button" class="profile-sms-btn" id="profile-email-old-sms-btn" onclick="sendProfileSms('email-old')">获取验证码</button>
+          </div>
+          <div class="profile-row" style="justify-content:flex-end">
+            <button type="button" class="profile-link-btn" onclick="cancelEmailEdit()">取消</button>
+            <button type="button" class="profile-link-btn" onclick="confirmEmailOldVerify()">下一步</button>
+          </div>
+        </div>
         <div class="profile-phone-edit hidden" id="profile-email-edit">
+          <div class="profile-step-hint" id="profile-email-new-hint">请输入新邮箱并完成验证</div>
           <div class="profile-row">
             <input class="profile-input" id="profile-email-new" type="email" maxlength="80" placeholder="新邮箱">
           </div>
           <div class="profile-row">
-            <input class="profile-input" id="profile-email-code" type="text" maxlength="6" placeholder="验证码">
+            <input class="profile-input" id="profile-email-code" type="text" maxlength="6" placeholder="新邮箱验证码">
             <button type="button" class="profile-sms-btn" id="profile-email-sms-btn" onclick="sendProfileSms('email')">获取验证码</button>
           </div>
           <div class="profile-row" style="justify-content:flex-end">
@@ -2803,44 +2839,20 @@ const TPL_FILTERS = [
   { id:'fresh', name:'清新' }, { id:'elegant', name:'优雅' }, { id:'minimal', name:'极简' },
 ];
 
-let PAGE_OPTS = ['尽情发挥','8-10 页','10-15 页','15-20 页','20-30 页'];
-const PPT_PAGE_COST = { '8-10 页':15, '10-15 页':20, '15-20 页':28, '20-30 页':40 };
-let PPT_PAGE_TIERS = [
-  { id:'ppt-tier-1', minPages:8, maxPages:10, credits:15 },
-  { id:'ppt-tier-2', minPages:10, maxPages:15, credits:20 },
-  { id:'ppt-tier-3', minPages:15, maxPages:20, credits:28 },
-  { id:'ppt-tier-4', minPages:20, maxPages:30, credits:40 },
-];
-function pptTierLabel(tier) {
-  return tier.minPages + '-' + tier.maxPages + ' 页';
-}
-function pptTiersFromCosts(costs) {
-  return Object.entries(costs || {}).map(([label, credits], index) => {
-    const matched = String(label).match(/(\d+)\s*-\s*(\d+)/);
-    return {
-      id: 'ppt-tier-' + (index + 1),
-      minPages: matched ? parseInt(matched[1], 10) : 1,
-      maxPages: matched ? parseInt(matched[2], 10) : 1,
-      credits: Number(credits) || 1,
-    };
-  }).sort((a, b) => a.minPages - b.minPages || a.maxPages - b.maxPages);
-}
-function applyPptPageTiers(tiers) {
-  if (!Array.isArray(tiers) || !tiers.length) return;
-  PPT_PAGE_TIERS = tiers.slice().sort((a, b) => a.minPages - b.minPages || a.maxPages - b.maxPages);
-  PAGE_OPTS.length = 0;
-  PAGE_OPTS.push(...PPT_PAGE_TIERS.map(pptTierLabel));
-  Object.keys(PPT_PAGE_COST).forEach((k) => delete PPT_PAGE_COST[k]);
-  PPT_PAGE_TIERS.forEach((tier) => { PPT_PAGE_COST[pptTierLabel(tier)] = tier.credits; });
-  if (!PAGE_OPTS.includes(pptParams.pages)) {
-    pptParams.pages = PAGE_OPTS[Math.min(1, PAGE_OPTS.length - 1)] || PAGE_OPTS[0];
-  }
-  if (typeof updateParamLabels === 'function') updateParamLabels();
-  if (typeof updateGenBar === 'function') updateGenBar();
-}
+const PAGE_OPTS = ['尽情发挥','8-10 页','10-15 页','15-20 页','20-30 页'];
+/** AI PPT 仅「生成大纲」成功扣费；默认值可被 OMS `pptOutlineCredit` 覆盖 */
+const DEFAULT_PPT_OUTLINE_CREDIT = 20;
+let PPT_OUTLINE_CREDIT = DEFAULT_PPT_OUTLINE_CREDIT;
+let pptOutlineCreditBase = null;
 function pptCost() {
-  if (pptParams.pages === '尽情发挥') return PPT_PAGE_COST['10-15 页'] || 20;
-  return PPT_PAGE_COST[pptParams.pages] || (PPT_PAGE_TIERS[0] && PPT_PAGE_TIERS[0].credits) || 20;
+  return Number(PPT_OUTLINE_CREDIT) > 0 ? Math.round(Number(PPT_OUTLINE_CREDIT)) : DEFAULT_PPT_OUTLINE_CREDIT;
+}
+function applyPptOutlineCredit(credit) {
+  const n = Number(credit);
+  if (!Number.isFinite(n) || n <= 0) return;
+  PPT_OUTLINE_CREDIT = Math.round(n);
+  if (typeof updatePptCostHint === 'function') updatePptCostHint();
+  if (typeof updateGenBar === 'function') updateGenBar();
 }
 const LANG_OPTS = ['简体中文','English','日本語','한국어'];
 const SCENE_OPTS = ['通用','工作汇报','教学课件','商业计划','营销策划','学术答辩'];
@@ -3058,6 +3070,16 @@ function docToolbarHTML() {
   return `<div class="doc-toolbar">${subTypeRadios('doc-sub')}${modelSelectHTML()}</div>`;
 }
 
+function pptSendControlsHTML(opts) {
+  const block = opts && opts.block ? ' ppt-send-row--block' : '';
+  return `<div class="ppt-send-row${block}">
+    <span class="ppt-cost-hint" id="ppt-cost-hint"></span>
+    <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled title="开始生成">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>`;
+}
+
 function renderCreatePanel() {
   const panel = document.getElementById('mode-panel');
   if (!panel) return;
@@ -3091,9 +3113,7 @@ function renderCreatePanel() {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 联网搜索
               </button>
-              <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled title="开始生成">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </button>
+              ${pptSendControlsHTML()}
             </div>
           </div>
         </div>
@@ -3126,21 +3146,15 @@ function renderCreatePanel() {
             <button type="button" class="upload-fmt-btn" onclick="pickFmtHint('FreeMind')">freemind</button>
             <button type="button" class="upload-fmt-btn" onclick="pickFmtHint('XMind')">xmind</button>
           </div>
-          <div style="text-align:right;margin-top:14px;padding-bottom:4px">
-            <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-          </div>
+          <div style="padding-bottom:4px">${pptSendControlsHTML({ block: true })}</div>
         ` : `
           ${docToolbarHTML()}
           <textarea class="mode-textarea" id="paste-input" rows="8"
-            placeholder="${docTab==='plain'?'在此输入或粘贴您的纯文本内容':'在此粘贴 Markdown 大纲内容'}"
+            placeholder="${docTab==='plain'?'在此输入或粘贴你的纯文本内容':'在此粘贴 Markdown 大纲内容'}"
             oninput="onPasteInput()">${escAttr(pasteContent)}</textarea>
           <div class="mode-input-foot">
             <span class="mode-char" id="paste-char">${pasteContent.length}/20000</span>
-            <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
+            ${pptSendControlsHTML()}
           </div>
         `}
       </div>`;
@@ -3155,11 +3169,7 @@ function renderCreatePanel() {
           <div class="upload-zone-sub">建议上传 100M 以内的 PPTX 演示文稿<br>目前支持解析文字、图片（jpg, jpeg, png, gif），将自动过滤图表等内容</div>
           ${docFile ? `<div style="margin-top:10px;font-size:12px;color:#5B67F5">已选：${escAttr(docFile.name)}</div>` : ''}
         </div>
-        <div style="text-align:right;margin-top:14px">
-          <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </div>
+        <div>${pptSendControlsHTML({ block: true })}</div>
       </div>`;
   } else if (createMode === 'link') {
     html = `
@@ -3168,24 +3178,17 @@ function renderCreatePanel() {
           oninput="onLinkInput()">${escAttr(linkUrl)}</textarea>
         <div class="mode-input-foot">
           <span class="mode-char"></span>
-          <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
+          ${pptSendControlsHTML()}
         </div>
       </div>`;
   } else if (createMode === 'single') {
     html = `
       <div class="mode-panel-body single-panel">
-        <p class="greeting-sub" style="margin-bottom:16px">输入主题，快速生成一页 PPT</p>
-        <div class="single-input-wrap">
-          <textarea class="mode-textarea" id="topic-input" rows="2"
-            placeholder="请输入您的主题或者粘贴您的内容" oninput="onTopicInput()" onkeydown="onTopicInputKey(event)"></textarea>
-          <div class="mode-input-foot">
-            <button type="button" class="history-btn" onclick="showToast('演示：加载历史大纲')">🕐 历史大纲</button>
-            <button type="button" class="icon-send" id="send-btn" onclick="startOutline()" disabled>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-          </div>
+        <textarea class="mode-textarea" id="topic-input" rows="5"
+          placeholder="请输入你的主题或者粘贴你的内容" oninput="onTopicInput()" onkeydown="onTopicInputKey(event)"></textarea>
+        <div class="mode-input-foot">
+          <span class="mode-char"></span>
+          ${pptSendControlsHTML()}
         </div>
       </div>`;
   }
@@ -3194,6 +3197,7 @@ function renderCreatePanel() {
   const ti = document.getElementById('topic-input');
   if (ti && topic) ti.value = topic;
   updateParamLabels();
+  updatePptCostHint();
   updateSend();
 }
 
@@ -3417,6 +3421,8 @@ function pickOpt(val) {
 // STEP 1 · outline (generate + edit)
 // ══════════════════════════════════════
 function startOutline() {
+  const cost = pptCost();
+  if (creditTotal() < cost) { showToast(CREDIT_LOW_MSG); return; }
   const genMsgs = {
     smart: pptParams.webSearch
       ? ['正在联网检索…', 'GET /api/ai/chat/network SSE']
@@ -3444,9 +3450,13 @@ function startOutline() {
     } else {
       outline = sampleOutline(topic || (docFile ? docFile.name.replace(/\.[^.]+$/, '') : linkUrl.slice(0, 20) || '演示文稿'));
     }
+    spendCredits(cost);
+    const name = topic || (docFile ? docFile.name.replace(/\.[^.]+$/, '') : linkUrl.slice(0, 20) || '未命名 PPT');
+    logUsage('PPT', `${name} · 生成大纲`, cost);
     selectedTpl = null;
     currentStep = 1;
     enterFlow();
+    showToast(`大纲已生成，消耗 ${cost} 积分，剩余 ${creditTotal()}`);
   }, 1200);
 }
 
@@ -3466,7 +3476,7 @@ function renderFlow() {
   document.getElementById('flow-actions').innerHTML = `
     <button class="btn-primary" id="gen-btn" onclick="generatePPT()" disabled>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      生成 PPT（预计消耗 ${pptCost()} 积分）
+      生成 PPT
     </button>`;
   updateGenBar();
 }
@@ -3564,11 +3574,10 @@ function selectTpl(id) { selectedTpl = (selectedTpl === id ? null : id); renderT
 function updateGenBar() {
   updateOutlineMeta();
   const ok = outline.length > 0 && !!selectedTpl;
-  const cost = pptCost();
   const btn = document.getElementById('gen-btn');
   if (btn) {
     btn.disabled = !ok;
-    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>生成 PPT（预计消耗 ${cost} 积分）`;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>生成 PPT`;
   }
   const hint = document.getElementById('flow-hint');
   if (hint) hint.textContent = outline.length === 0 ? '请至少保留一个章节'
@@ -3586,12 +3595,8 @@ function flowBack() {
 // ══════════════════════════════════════
 function generatePPT() {
   if (!selectedTpl) return;
-  const cost = pptCost();
-  if (creditTotal() < cost) { showToast(CREDIT_LOW_MSG); return; }
-  spendCredits(cost);
   const tpl = TEMPLATES.find(t => t.id === selectedTpl);
   const name = topic || (docFile ? docFile.name.replace(/\.[^.]+$/, '') : '未命名 PPT');
-  logUsage('PPT', `${name} · ${pptParams.pages}`, cost);
   showGen('正在生成 PPT…', '套用模板、智能排版与配图中');
   setTimeout(() => {
     hideGen();
@@ -3602,7 +3607,7 @@ function generatePPT() {
     history.unshift({ id, name, date:'今天' });
     renderHistory();
     openEditor(id);
-    showToast(`PPT 生成成功，消耗 ${cost} 积分，剩余 ${creditTotal()}`);
+    showToast('PPT 生成成功');
   }, 1500);
 }
 
@@ -4215,6 +4220,8 @@ const DEFAULT_USER_PROFILE = {
   name: '王俊秀PI',
   phone: '13800138000',
   email: 'wangjunxiu@rjm.cn',
+  phoneVerified: true,
+  emailVerified: true,
   avatar: null,
   wechatBound: true,
   wechatNickname: '俊秀',
@@ -4222,8 +4229,12 @@ const DEFAULT_USER_PROFILE = {
 let profileDraft = null;
 let profileSmsTimer = null;
 let profileEmailSmsTimer = null;
+let profilePhoneOldSmsTimer = null;
+let profileEmailOldSmsTimer = null;
 let profilePhoneEditing = false;
 let profileEmailEditing = false;
+let profilePhoneStep = null; // 'verify' | 'new'
+let profileEmailStep = null; // 'verify' | 'new'
 let avatarEditDraft = null;
 let avatarEditSelectedDefault = -1;
 
@@ -4417,23 +4428,60 @@ function renderWechatSection(profile) {
     unbound?.classList.remove('hidden');
   }
 }
+function setVerifyTag(elId, verified) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = verified ? '已验证' : '未验证';
+  el.classList.toggle('off', !verified);
+}
+function showPhonePanels(mode) {
+  // mode: 'view' | 'verify' | 'new'
+  document.getElementById('profile-phone-view')?.classList.toggle('hidden', mode !== 'view');
+  document.getElementById('profile-phone-verify')?.classList.toggle('hidden', mode !== 'verify');
+  document.getElementById('profile-phone-edit')?.classList.toggle('hidden', mode !== 'new');
+}
+function showEmailPanels(mode) {
+  document.getElementById('profile-email-view')?.classList.toggle('hidden', mode !== 'view');
+  document.getElementById('profile-email-verify')?.classList.toggle('hidden', mode !== 'verify');
+  document.getElementById('profile-email-edit')?.classList.toggle('hidden', mode !== 'new');
+}
+function resetPhoneEditState() {
+  profilePhoneEditing = false;
+  profilePhoneStep = null;
+  showPhonePanels('view');
+  const oldCode = document.getElementById('profile-phone-old-code');
+  const phoneNew = document.getElementById('profile-phone-new');
+  const phoneCode = document.getElementById('profile-phone-code');
+  if (oldCode) oldCode.value = '';
+  if (phoneNew) phoneNew.value = '';
+  if (phoneCode) phoneCode.value = '';
+  profileSmsTimer = resetProfileCodeBtn('profile-sms-btn', profileSmsTimer);
+  profilePhoneOldSmsTimer = resetProfileCodeBtn('profile-phone-old-sms-btn', profilePhoneOldSmsTimer);
+}
+function resetEmailEditState() {
+  profileEmailEditing = false;
+  profileEmailStep = null;
+  showEmailPanels('view');
+  const oldCode = document.getElementById('profile-email-old-code');
+  const emailNew = document.getElementById('profile-email-new');
+  const emailCode = document.getElementById('profile-email-code');
+  if (oldCode) oldCode.value = '';
+  if (emailNew) emailNew.value = '';
+  if (emailCode) emailCode.value = '';
+  profileEmailSmsTimer = resetProfileCodeBtn('profile-email-sms-btn', profileEmailSmsTimer);
+  profileEmailOldSmsTimer = resetProfileCodeBtn('profile-email-old-sms-btn', profileEmailOldSmsTimer);
+}
 function fillProfileForm(profile) {
   profileDraft = { ...profile };
-  profilePhoneEditing = false;
-  profileEmailEditing = false;
+  resetPhoneEditState();
+  resetEmailEditState();
   document.getElementById('profile-phone-display').textContent = maskPhone(profile.phone);
   document.getElementById('profile-email-display').textContent = maskEmail(profile.email);
+  document.getElementById('profile-phone-old-mask').textContent = maskPhone(profile.phone);
+  document.getElementById('profile-email-old-mask').textContent = maskEmail(profile.email);
+  setVerifyTag('profile-phone-tag', !!profile.phoneVerified);
+  setVerifyTag('profile-email-tag', !!profile.emailVerified);
   document.getElementById('profile-name').value = profile.name || '';
-  document.getElementById('profile-phone-view').classList.remove('hidden');
-  document.getElementById('profile-phone-edit').classList.add('hidden');
-  document.getElementById('profile-phone-new').value = '';
-  document.getElementById('profile-phone-code').value = '';
-  document.getElementById('profile-email-view').classList.remove('hidden');
-  document.getElementById('profile-email-edit').classList.add('hidden');
-  document.getElementById('profile-email-new').value = '';
-  document.getElementById('profile-email-code').value = '';
-  profileSmsTimer = resetProfileCodeBtn('profile-sms-btn', profileSmsTimer);
-  profileEmailSmsTimer = resetProfileCodeBtn('profile-email-sms-btn', profileEmailSmsTimer);
   renderProfileHead(profile);
   renderWechatSection(profile);
 }
@@ -4446,40 +4494,74 @@ function closeProfile(e) {
   if (e && e.currentTarget && e.target !== e.currentTarget) return;
   document.getElementById('profileModal').classList.add('hidden');
   document.getElementById('avatarEditorModal')?.classList.add('hidden');
-  profilePhoneEditing = false;
-  profileEmailEditing = false;
-  profileSmsTimer = resetProfileCodeBtn('profile-sms-btn', profileSmsTimer);
-  profileEmailSmsTimer = resetProfileCodeBtn('profile-email-sms-btn', profileEmailSmsTimer);
+  resetPhoneEditState();
+  resetEmailEditState();
 }
 function startPhoneEdit() {
   if (profileEmailEditing) { showToast('请先完成或取消邮箱修改'); return; }
+  if (!profileDraft) profileDraft = { ...getUserProfile() };
   profilePhoneEditing = true;
-  document.getElementById('profile-phone-view').classList.add('hidden');
-  document.getElementById('profile-phone-edit').classList.remove('hidden');
-  document.getElementById('profile-phone-new').focus();
+  const needVerify = !!profileDraft.phoneVerified && !!profileDraft.phone;
+  if (needVerify) {
+    profilePhoneStep = 'verify';
+    document.getElementById('profile-phone-old-mask').textContent = maskPhone(profileDraft.phone);
+    showPhonePanels('verify');
+    document.getElementById('profile-phone-old-code')?.focus();
+  } else {
+    profilePhoneStep = 'new';
+    const hint = document.getElementById('profile-phone-new-hint');
+    if (hint) hint.textContent = '当前手机号未验证，可直接换绑新手机号';
+    showPhonePanels('new');
+    document.getElementById('profile-phone-new')?.focus();
+  }
 }
 function cancelPhoneEdit() {
-  profilePhoneEditing = false;
-  document.getElementById('profile-phone-view').classList.remove('hidden');
-  document.getElementById('profile-phone-edit').classList.add('hidden');
-  document.getElementById('profile-phone-new').value = '';
-  document.getElementById('profile-phone-code').value = '';
-  profileSmsTimer = resetProfileCodeBtn('profile-sms-btn', profileSmsTimer);
+  resetPhoneEditState();
+}
+function confirmPhoneOldVerify() {
+  const code = document.getElementById('profile-phone-old-code')?.value?.trim();
+  if (!/^\d{4,6}$/.test(code || '')) { showToast('请输入原手机号验证码'); return; }
+  profilePhoneStep = 'new';
+  const hint = document.getElementById('profile-phone-new-hint');
+  if (hint) hint.textContent = '原手机号已验证，请输入新手机号';
+  document.getElementById('profile-phone-old-code').value = '';
+  profilePhoneOldSmsTimer = resetProfileCodeBtn('profile-phone-old-sms-btn', profilePhoneOldSmsTimer);
+  showPhonePanels('new');
+  document.getElementById('profile-phone-new')?.focus();
+  showToast('原手机号验证通过');
 }
 function startEmailEdit() {
   if (profilePhoneEditing) { showToast('请先完成或取消手机号修改'); return; }
+  if (!profileDraft) profileDraft = { ...getUserProfile() };
   profileEmailEditing = true;
-  document.getElementById('profile-email-view').classList.add('hidden');
-  document.getElementById('profile-email-edit').classList.remove('hidden');
-  document.getElementById('profile-email-new').focus();
+  const needVerify = !!profileDraft.emailVerified && !!profileDraft.email;
+  if (needVerify) {
+    profileEmailStep = 'verify';
+    document.getElementById('profile-email-old-mask').textContent = maskEmail(profileDraft.email);
+    showEmailPanels('verify');
+    document.getElementById('profile-email-old-code')?.focus();
+  } else {
+    profileEmailStep = 'new';
+    const hint = document.getElementById('profile-email-new-hint');
+    if (hint) hint.textContent = '当前邮箱未验证，可直接换绑新邮箱';
+    showEmailPanels('new');
+    document.getElementById('profile-email-new')?.focus();
+  }
 }
 function cancelEmailEdit() {
-  profileEmailEditing = false;
-  document.getElementById('profile-email-view').classList.remove('hidden');
-  document.getElementById('profile-email-edit').classList.add('hidden');
-  document.getElementById('profile-email-new').value = '';
-  document.getElementById('profile-email-code').value = '';
-  profileEmailSmsTimer = resetProfileCodeBtn('profile-email-sms-btn', profileEmailSmsTimer);
+  resetEmailEditState();
+}
+function confirmEmailOldVerify() {
+  const code = document.getElementById('profile-email-old-code')?.value?.trim();
+  if (!/^\d{4,6}$/.test(code || '')) { showToast('请输入原邮箱验证码'); return; }
+  profileEmailStep = 'new';
+  const hint = document.getElementById('profile-email-new-hint');
+  if (hint) hint.textContent = '原邮箱已验证，请输入新邮箱';
+  document.getElementById('profile-email-old-code').value = '';
+  profileEmailOldSmsTimer = resetProfileCodeBtn('profile-email-old-sms-btn', profileEmailOldSmsTimer);
+  showEmailPanels('new');
+  document.getElementById('profile-email-new')?.focus();
+  showToast('原邮箱验证通过');
 }
 function startProfileCodeCountdown(btnId, timerSetter) {
   const btn = document.getElementById(btnId);
@@ -4498,6 +4580,20 @@ function startProfileCodeCountdown(btnId, timerSetter) {
   timerSetter(timer);
 }
 function sendProfileSms(kind) {
+  if (kind === 'phone-old') {
+    if (!profileDraft?.phone) { showToast('当前无手机号'); return; }
+    clearInterval(profilePhoneOldSmsTimer);
+    startProfileCodeCountdown('profile-phone-old-sms-btn', (t) => { profilePhoneOldSmsTimer = t; });
+    showToast(`验证码已发送至 ${maskPhone(profileDraft.phone)}（演示）`);
+    return;
+  }
+  if (kind === 'email-old') {
+    if (!profileDraft?.email) { showToast('当前无邮箱'); return; }
+    clearInterval(profileEmailOldSmsTimer);
+    startProfileCodeCountdown('profile-email-old-sms-btn', (t) => { profileEmailOldSmsTimer = t; });
+    showToast(`验证码已发送至 ${maskEmail(profileDraft.email)}（演示）`);
+    return;
+  }
   if (kind === 'email') {
     const email = document.getElementById('profile-email-new')?.value?.trim();
     if (!isValidEmail(email)) { showToast('请输入正确的新邮箱'); return; }
@@ -4519,8 +4615,11 @@ function confirmPhoneEdit() {
   if (!/^\d{4,6}$/.test(code || '')) { showToast('请输入验证码'); return; }
   if (!profileDraft) profileDraft = { ...getUserProfile() };
   profileDraft.phone = phone;
+  profileDraft.phoneVerified = true;
   document.getElementById('profile-phone-display').textContent = maskPhone(phone);
-  cancelPhoneEdit();
+  document.getElementById('profile-phone-old-mask').textContent = maskPhone(phone);
+  setVerifyTag('profile-phone-tag', true);
+  resetPhoneEditState();
   showToast('手机号已更新（演示）');
 }
 function confirmEmailEdit() {
@@ -4530,8 +4629,11 @@ function confirmEmailEdit() {
   if (!/^\d{4,6}$/.test(code || '')) { showToast('请输入验证码'); return; }
   if (!profileDraft) profileDraft = { ...getUserProfile() };
   profileDraft.email = email;
+  profileDraft.emailVerified = true;
   document.getElementById('profile-email-display').textContent = maskEmail(email);
-  cancelEmailEdit();
+  document.getElementById('profile-email-old-mask').textContent = maskEmail(email);
+  setVerifyTag('profile-email-tag', true);
+  resetEmailEditState();
   showToast('邮箱已更新（演示）');
 }
 function openWechatBind() {
@@ -5120,14 +5222,8 @@ function formatUsageDetailWithCredits(detail, type) {
   const text = String(detail || '');
   if (!text) return text;
   if (type === 'PPT' || String(type).indexOf('PPT') === 0) {
-    const pageMatch = text.match(/(\d+\s*-\s*\d+\s*页)/);
-    if (pageMatch) {
-      const key = pageMatch[1].replace(/\s+/g, '');
-      const tierKey = Object.keys(PPT_PAGE_COST).find(k => k.replace(/\s+/g, '') === key);
-      const credits = tierKey ? PPT_PAGE_COST[tierKey] : null;
-      if (credits != null) return `${text}（${credits}积分/份）`;
-    }
-    return text;
+    if (/生成大纲/.test(text) || /积分\/次/.test(text)) return text;
+    return `${text}（${pptCost()}积分/次）`;
   }
   return text.split('、').map(p => annotateUsageModelPart(p, type)).join('、');
 }
@@ -5262,7 +5358,7 @@ let omsPlatformConfig = {
   drawInstructions: '',
   customInstructions: '',
   featuredTabLabel: 'ALLiN1 精选提示词',
-  chatContext: { enabled: true, maxRounds: 20, maxTokens: 32000 },
+  chatContext: { enabled: true, maxRounds: 20, maxChars: 32000 },
   dailySignin: { ...SIGNIN_DEFAULTS },
   monthlyCredits: { ...MONTHLY_DEFAULTS },
 };
@@ -5382,11 +5478,12 @@ function loadOmsClientConfig() {
       }
       const ctx = (p.chatContext && typeof p.chatContext === 'object') ? p.chatContext : {};
       const maxRounds = parseInt(ctx.maxRounds, 10);
-      const maxTokens = parseInt(ctx.maxTokens, 10);
+      const maxCharsRaw = ctx.maxChars != null ? ctx.maxChars : ctx.maxTokens;
+      const maxChars = parseInt(maxCharsRaw, 10);
       omsPlatformConfig.chatContext = {
         enabled: ctx.enabled !== false,
         maxRounds: Number.isFinite(maxRounds) && maxRounds > 0 ? maxRounds : 20,
-        maxTokens: Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : 32000,
+        maxChars: Number.isFinite(maxChars) && maxChars > 0 ? maxChars : 32000,
       };
     }
     const u = JSON.parse(localStorage.getItem(OMS_KEYS.unit) || 'null');
@@ -5424,15 +5521,16 @@ function getEffectiveCustomInstructions() {
   if (user) parts.push(user);
   return parts.join('\n');
 }
-/** OMS 全局：AI 对话上下文截断规则（轮数 + Token） */
+/** OMS 全局：AI 对话上下文截断规则（轮数 + 字符） */
 function getChatContextLimits() {
   const ctx = (omsPlatformConfig && omsPlatformConfig.chatContext) || {};
   if (ctx.enabled === false) return null;
   const maxRounds = parseInt(ctx.maxRounds, 10);
-  const maxTokens = parseInt(ctx.maxTokens, 10);
+  const maxCharsRaw = ctx.maxChars != null ? ctx.maxChars : ctx.maxTokens;
+  const maxChars = parseInt(maxCharsRaw, 10);
   return {
     maxRounds: Number.isFinite(maxRounds) && maxRounds > 0 ? maxRounds : 20,
-    maxTokens: Number.isFinite(maxTokens) && maxTokens > 0 ? maxTokens : 32000,
+    maxChars: Number.isFinite(maxChars) && maxChars > 0 ? maxChars : 32000,
   };
 }
 
@@ -6519,14 +6617,11 @@ const OMS_CLIENT_MODEL_MAP = {
 };
 let chatModelsCreditBase = null;
 let drawModelsCreditBase = null;
-let pptPageCostBase = null;
-let pptPageTiersBase = null;
 function snapshotModelCreditBase() {
   if (!chatModelsCreditBase) {
     chatModelsCreditBase = JSON.parse(JSON.stringify(CHAT_MODELS));
     drawModelsCreditBase = JSON.parse(JSON.stringify(DRAW_MODELS));
-    pptPageCostBase = { ...PPT_PAGE_COST };
-    pptPageTiersBase = JSON.parse(JSON.stringify(PPT_PAGE_TIERS));
+    pptOutlineCreditBase = PPT_OUTLINE_CREDIT;
   }
 }
 function resetModelCreditsFromBase() {
@@ -6537,7 +6632,7 @@ function resetModelCreditsFromBase() {
     m.versionCosts = { ...base.versionCosts };
   });
   DRAW_MODELS.forEach((m, i) => { m.cost = drawModelsCreditBase[i].cost; });
-  applyPptPageTiers(JSON.parse(JSON.stringify(pptPageTiersBase)));
+  applyPptOutlineCredit(pptOutlineCreditBase != null ? pptOutlineCreditBase : DEFAULT_PPT_OUTLINE_CREDIT);
 }
 function applyOmsModelCredits(config) {
   resetModelCreditsFromBase();
@@ -6559,24 +6654,33 @@ function applyOmsModelCredits(config) {
     });
     Object.entries(OMS_CLIENT_MODEL_MAP).forEach(([code, ref]) => {
       const item = byCode[code.toLowerCase()];
-      if (!item || !item.creditCost) return;
+      if (!item) return;
+      const chatCredit = item.chatCreditCost != null ? item.chatCreditCost : (item.creditUnit !== 'image' ? item.creditCost : null);
+      const drawCredit = item.drawCreditCost != null ? item.drawCreditCost : (item.creditUnit === 'image' ? item.creditCost : null);
       if (ref.type === 'chat') {
         const m = CHAT_MODELS.find((x) => x.id === ref.id);
-        if (!m) return;
-        if (ref.version && m.versionCosts) m.versionCosts[ref.version] = item.creditCost;
-        else m.cost = item.creditCost;
+        if (!m || !chatCredit) return;
+        if (ref.version && m.versionCosts) m.versionCosts[ref.version] = chatCredit;
+        else m.cost = chatCredit;
         const curVer = chatVersionMap[m.id] || m.version;
         if (m.versionCosts && m.versionCosts[curVer] != null) m.cost = m.versionCosts[curVer];
       } else if (ref.type === 'draw') {
         const m = DRAW_MODELS.find((x) => x.id === ref.id);
-        if (m) m.cost = item.creditCost;
+        if (!m) return;
+        const credit = drawCredit != null ? drawCredit : chatCredit;
+        if (credit) m.cost = credit;
       }
     });
   }
-  if (Array.isArray(config.pptPageTiers) && config.pptPageTiers.length) {
-    applyPptPageTiers(config.pptPageTiers);
+  if (Number(config.pptOutlineCredit) > 0) {
+    applyPptOutlineCredit(config.pptOutlineCredit);
+  } else if (Array.isArray(config.pptPageTiers) && config.pptPageTiers.length) {
+    // 兼容旧 OMS 档位配置：取最低档作为单一大纲积分
+    const credits = config.pptPageTiers.map((t) => Number(t && t.credits)).filter((n) => Number.isFinite(n) && n > 0);
+    if (credits.length) applyPptOutlineCredit(Math.min.apply(null, credits));
   } else if (config.pptPageCosts && typeof config.pptPageCosts === 'object') {
-    applyPptPageTiers(pptTiersFromCosts(config.pptPageCosts));
+    const credits = Object.values(config.pptPageCosts).map(Number).filter((n) => Number.isFinite(n) && n > 0);
+    if (credits.length) applyPptOutlineCredit(Math.min.apply(null, credits));
   }
   attachOmsSortMeta();
 }
