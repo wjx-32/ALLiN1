@@ -1463,15 +1463,14 @@
                   <span class="platform-section-title">基础积分</span>
                 </div>
                 <div class="platform-config-hint" style="margin-left:0;margin-bottom:10px;">
-                  当月有效，次月自动刷新额度。平台配置单位默认额度与个人版额度；各单位是否开启及专属额度请在「单位管理 → 积分配置」中设置。
+                  当月有效，次月自动刷新额度。平台配置「单位默认额度」（含个人版 / 公共平台单位）；各单位是否开启及专属额度请在「单位管理 → 积分配置」中设置。
                 </div>
-                <div class="ppt-credit-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+                <div class="ppt-credit-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:480px;">
                   <label class="ppt-credit-item" style="align-items:center;">
                     <span>平台总开关</span>
                     <input type="checkbox" id="monthlyCreditsEnabledInput" checked style="width:16px;height:16px;" />
                   </label>
                   <label class="ppt-credit-item">单位默认额度<input type="number" id="monthlyCreditsDefaultInput" class="usage-input" min="0" max="999999" value="1000">积分/月</label>
-                  <label class="ppt-credit-item">个人版额度<input type="number" id="monthlyCreditsPersonalInput" class="usage-input" min="0" max="999999" value="1000">积分/月</label>
                 </div>
                 <div class="platform-config-actions" style="margin-left:0;">
                   <button type="button" class="btn primary" id="btnSaveMonthlyCredits">保存基础积分</button>
@@ -1510,17 +1509,19 @@
                 </div>
                 <div class="platform-config-hint" style="margin-left:0;margin-bottom:10px;">
                   <b>扣费节点</b>：仅在「生成大纲」成功时扣减 1 次；编辑大纲、选模板、生成 PPT、进入编辑器 / 美化 / 下载等后续操作不另扣。<br>
-                  不按页数分档，全平台统一「积分/次」。页数仍可作为生成参数由用户选择，不影响扣费。
+                  不按页数分档，全平台统一「积分/次」。页数仍可作为生成参数由用户选择，不影响扣费。<br>
+                  <b>单次价格</b>：单次「生成大纲」对应的上游价格（元），用于单位/用户统计中的 PPT 已用金额与平均 PPT 成本核算。
                 </div>
-                <div class="ppt-credit-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:480px;">
+                <div class="ppt-credit-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:560px;">
                   <label class="ppt-credit-item">生成大纲<input type="number" id="pptOutlineCreditInput" class="usage-input" min="1" max="9999" value="20">积分/次</label>
+                  <label class="ppt-credit-item">单次价格<input type="number" id="pptUnitPriceInput" class="usage-input" min="0" max="9999" step="0.01" value="0.5">元/次</label>
                 </div>
                 <div class="platform-config-actions" style="margin-left:0;margin-top:10px;">
                   <button type="button" class="btn primary" id="btnSavePptOutlineCredit">保存 AI PPT 积分</button>
                   <button type="button" class="btn" id="btnResetPptOutlineCredit">恢复默认</button>
                 </div>
                 <div class="platform-sync-tip">
-                  保存后写入 <code>allin1_oms_model_credits</code>（字段 <code>pptOutlineCredit</code>），用户端 AI PPT 首页「预计消耗」自动同步。
+                  保存后写入 <code>allin1_oms_model_credits</code>（字段 <code>pptOutlineCredit</code>、<code>pptUnitPrice</code>）；用户端 AI PPT 首页「预计消耗」同步积分配置。
                 </div>
               </div>
             </div>
@@ -1589,7 +1590,7 @@
               <button class="btn primary">查询</button>
               <button class="btn">重置</button>
             </div>
-            <div class="stat-dim-tip">指标按四组展示：概览 → 成本（元）→ 用量 → 积分。已使用金额/积分均可拆为对话与绘图；平均对话成本=对话已用金额÷AI对话次数；平均绘图成本=绘图已用金额÷AI绘图张数；平均对话/绘图积分同理按对应积分÷对应次数（张数）。</div>
+            <div class="stat-dim-tip">指标按四组展示：概览 → 成本（元）→ 用量 → 积分。已使用金额/积分均可拆为对话、绘图与 PPT；平均对话成本=对话已用金额÷AI对话次数；平均绘图成本=绘图已用金额÷AI绘图张数；平均 PPT 成本=PPT已用金额÷AI PPT次数；平均对话/绘图/PPT积分同理。PPT 次数按「生成大纲」成功计（含换个大纲）；生成 PPT / 编辑 / 下载不另计入次与积分。</div>
             <div class="stat-kpi-block">
               <div class="stat-kpi-block-title"><span class="dot base"></span>概览</div>
               <div class="stat-kpi-grid">
@@ -1603,11 +1604,13 @@
               <div class="stat-kpi-block-title"><span class="dot cost"></span>成本（元）</div>
               <div class="stat-kpi-grid">
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">剩余金额(元) <span class="stat-kpi-info" title="账户剩余金额">i</span></div><div class="stat-kpi-value">¥1643.6802</div></div>
-                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">已使用金额(元) <span class="stat-kpi-info" title="对话+绘图上游费用合计">i</span></div><div class="stat-kpi-value">¥337.4372</div></div>
+                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">已使用金额(元) <span class="stat-kpi-info" title="对话+绘图+PPT上游费用合计">i</span></div><div class="stat-kpi-value">¥380.4372</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">对话已用金额(元) <span class="stat-kpi-info" title="仅 AI 对话上游费用">i</span></div><div class="stat-kpi-value">¥258.8300</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">绘图已用金额(元) <span class="stat-kpi-info" title="仅 AI 绘图上游费用">i</span></div><div class="stat-kpi-value">¥78.6072</div></div>
+                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">PPT已用金额(元) <span class="stat-kpi-info" title="仅 AI PPT 上游费用（按大纲成功计次结算）">i</span></div><div class="stat-kpi-value">¥43.0000</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">平均对话成本(元) <span class="stat-kpi-info" title="对话已用金额 ÷ AI对话次数">i</span></div><div class="stat-kpi-value">¥0.3982</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">平均绘图成本(元) <span class="stat-kpi-info" title="绘图已用金额 ÷ AI绘图张数">i</span></div><div class="stat-kpi-value">¥0.4913</div></div>
+                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">平均PPT成本(元) <span class="stat-kpi-info" title="PPT已用金额 ÷ AI PPT次数">i</span></div><div class="stat-kpi-value">¥0.5000</div></div>
               </div>
             </div>
             <div class="stat-kpi-block">
@@ -1615,17 +1618,20 @@
               <div class="stat-kpi-grid">
                 <div class="stat-kpi-card dim-usage"><div class="stat-kpi-label">AI对话次数 <span class="stat-kpi-info" title="AI 对话调用次数">i</span></div><div class="stat-kpi-value">650</div></div>
                 <div class="stat-kpi-card dim-usage"><div class="stat-kpi-label">AI绘图张数 <span class="stat-kpi-info" title="AI 绘图生成张数">i</span></div><div class="stat-kpi-value">160</div></div>
+                <div class="stat-kpi-card dim-usage"><div class="stat-kpi-label">AI PPT次数 <span class="stat-kpi-info" title="AI PPT「生成大纲」成功次数（含换个大纲）">i</span></div><div class="stat-kpi-value">86</div></div>
               </div>
             </div>
             <div class="stat-kpi-block">
               <div class="stat-kpi-block-title"><span class="dot credit"></span>积分</div>
               <div class="stat-kpi-grid">
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">剩余积分 <span class="stat-kpi-info" title="单位下用户可用积分合计">i</span></div><div class="stat-kpi-value">286,450</div></div>
-                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">已使用积分 <span class="stat-kpi-info" title="对话+绘图消耗合计">i</span></div><div class="stat-kpi-value">12,860</div></div>
+                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">已使用积分 <span class="stat-kpi-info" title="对话+绘图+PPT消耗合计">i</span></div><div class="stat-kpi-value">14,580</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">对话已用积分 <span class="stat-kpi-info" title="AI 对话消耗积分">i</span></div><div class="stat-kpi-value">10,400</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">绘图已用积分 <span class="stat-kpi-info" title="AI 绘图消耗积分">i</span></div><div class="stat-kpi-value">2,460</div></div>
+                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">PPT已用积分 <span class="stat-kpi-info" title="AI PPT 消耗积分（仅生成大纲成功扣费）">i</span></div><div class="stat-kpi-value">1,720</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">平均对话积分 <span class="stat-kpi-info" title="对话已用积分 ÷ AI对话次数">i</span></div><div class="stat-kpi-value">16.00</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">平均绘图积分 <span class="stat-kpi-info" title="绘图已用积分 ÷ AI绘图张数">i</span></div><div class="stat-kpi-value">15.38</div></div>
+                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">平均PPT积分 <span class="stat-kpi-info" title="PPT已用积分 ÷ AI PPT次数">i</span></div><div class="stat-kpi-value">20.00</div></div>
               </div>
             </div>
             <div class="stat-export-row">
@@ -1645,16 +1651,21 @@
                     <th class="th-sortable" data-sort-key="usedAmount" style="width:100px;"><span class="sort-label">已使用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="chatAmount" style="width:110px;"><span class="sort-label">对话已用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="drawAmount" style="width:110px;"><span class="sort-label">绘图已用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="pptAmount" style="width:110px;"><span class="sort-label">PPT已用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgChatCost" style="width:110px;"><span class="sort-label">平均对话成本(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgDrawCost" style="width:110px;"><span class="sort-label">平均绘图成本(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="avgPptCost" style="width:110px;"><span class="sort-label">平均PPT成本(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="chatCount" style="width:80px;"><span class="sort-label">AI对话次数<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="drawCount" style="width:80px;"><span class="sort-label">AI绘图张数<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="pptCount" style="width:80px;"><span class="sort-label">AI PPT次数<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="remainCredit" style="width:90px;"><span class="sort-label">剩余积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="usedCredit" style="width:90px;"><span class="sort-label">已使用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="chatCredit" style="width:90px;"><span class="sort-label">对话已用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="drawCredit" style="width:90px;"><span class="sort-label">绘图已用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="pptCredit" style="width:90px;"><span class="sort-label">PPT已用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgChatCredit" style="width:90px;"><span class="sort-label">平均对话积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgDrawCredit" style="width:90px;"><span class="sort-label">平均绘图积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="avgPptCredit" style="width:90px;"><span class="sort-label">平均PPT积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="sticky-ops" style="width:100px;">操作</th>
                   </tr>
                 </thead>
@@ -1686,7 +1697,7 @@
               <button class="btn primary">查询</button>
               <button class="btn">重置</button>
             </div>
-            <div class="stat-dim-tip">指标按四组展示：概览 → 成本（元）→ 用量 → 积分。已使用金额/积分均可拆为对话与绘图；平均对话成本=对话已用金额÷AI对话次数；平均绘图成本=绘图已用金额÷AI绘图张数；平均对话/绘图积分同理按对应积分÷对应次数（张数）。</div>
+            <div class="stat-dim-tip">指标按四组展示：概览 → 成本（元）→ 用量 → 积分。已使用金额/积分均可拆为对话、绘图与 PPT；平均对话成本=对话已用金额÷AI对话次数；平均绘图成本=绘图已用金额÷AI绘图张数；平均 PPT 成本=PPT已用金额÷AI PPT次数；平均对话/绘图/PPT积分同理。PPT 次数按「生成大纲」成功计（含换个大纲）；生成 PPT / 编辑 / 下载不另计入次与积分。</div>
             <div class="stat-kpi-block">
               <div class="stat-kpi-block-title"><span class="dot base"></span>概览</div>
               <div class="stat-kpi-grid">
@@ -1696,11 +1707,13 @@
             <div class="stat-kpi-block">
               <div class="stat-kpi-block-title"><span class="dot cost"></span>成本（元）</div>
               <div class="stat-kpi-grid">
-                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">已使用金额(元) <span class="stat-kpi-info" title="对话+绘图上游费用合计">i</span></div><div class="stat-kpi-value">¥337.4372</div></div>
+                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">已使用金额(元) <span class="stat-kpi-info" title="对话+绘图+PPT上游费用合计">i</span></div><div class="stat-kpi-value">¥380.4372</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">对话已用金额(元) <span class="stat-kpi-info" title="仅 AI 对话上游费用">i</span></div><div class="stat-kpi-value">¥258.8300</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">绘图已用金额(元) <span class="stat-kpi-info" title="仅 AI 绘图上游费用">i</span></div><div class="stat-kpi-value">¥78.6072</div></div>
+                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">PPT已用金额(元) <span class="stat-kpi-info" title="仅 AI PPT 上游费用（按大纲成功计次结算）">i</span></div><div class="stat-kpi-value">¥43.0000</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">平均对话成本(元) <span class="stat-kpi-info" title="对话已用金额 ÷ AI对话次数">i</span></div><div class="stat-kpi-value">¥0.3982</div></div>
                 <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">平均绘图成本(元) <span class="stat-kpi-info" title="绘图已用金额 ÷ AI绘图张数">i</span></div><div class="stat-kpi-value">¥0.4913</div></div>
+                <div class="stat-kpi-card dim-cost"><div class="stat-kpi-label">平均PPT成本(元) <span class="stat-kpi-info" title="PPT已用金额 ÷ AI PPT次数">i</span></div><div class="stat-kpi-value">¥0.5000</div></div>
               </div>
             </div>
             <div class="stat-kpi-block">
@@ -1708,17 +1721,20 @@
               <div class="stat-kpi-grid">
                 <div class="stat-kpi-card dim-usage"><div class="stat-kpi-label">AI对话次数 <span class="stat-kpi-info" title="AI 对话调用次数">i</span></div><div class="stat-kpi-value">650</div></div>
                 <div class="stat-kpi-card dim-usage"><div class="stat-kpi-label">AI绘图张数 <span class="stat-kpi-info" title="AI 绘图生成张数">i</span></div><div class="stat-kpi-value">160</div></div>
+                <div class="stat-kpi-card dim-usage"><div class="stat-kpi-label">AI PPT次数 <span class="stat-kpi-info" title="AI PPT「生成大纲」成功次数（含换个大纲）">i</span></div><div class="stat-kpi-value">86</div></div>
               </div>
             </div>
             <div class="stat-kpi-block">
               <div class="stat-kpi-block-title"><span class="dot credit"></span>积分</div>
               <div class="stat-kpi-grid">
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">剩余积分 <span class="stat-kpi-info" title="用户可用积分合计（基础+活动赠送）">i</span></div><div class="stat-kpi-value">286,450</div></div>
-                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">已使用积分 <span class="stat-kpi-info" title="对话+绘图消耗合计">i</span></div><div class="stat-kpi-value">12,860</div></div>
+                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">已使用积分 <span class="stat-kpi-info" title="对话+绘图+PPT消耗合计">i</span></div><div class="stat-kpi-value">14,580</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">对话已用积分 <span class="stat-kpi-info" title="AI 对话消耗积分">i</span></div><div class="stat-kpi-value">10,400</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">绘图已用积分 <span class="stat-kpi-info" title="AI 绘图消耗积分">i</span></div><div class="stat-kpi-value">2,460</div></div>
+                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">PPT已用积分 <span class="stat-kpi-info" title="AI PPT 消耗积分（仅生成大纲成功扣费）">i</span></div><div class="stat-kpi-value">1,720</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">平均对话积分 <span class="stat-kpi-info" title="对话已用积分 ÷ AI对话次数">i</span></div><div class="stat-kpi-value">16.00</div></div>
                 <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">平均绘图积分 <span class="stat-kpi-info" title="绘图已用积分 ÷ AI绘图张数">i</span></div><div class="stat-kpi-value">15.38</div></div>
+                <div class="stat-kpi-card dim-credit"><div class="stat-kpi-label">平均PPT积分 <span class="stat-kpi-info" title="PPT已用积分 ÷ AI PPT次数">i</span></div><div class="stat-kpi-value">20.00</div></div>
               </div>
             </div>
             <div class="stat-export-row">
@@ -1737,16 +1753,21 @@
                     <th class="th-sortable" data-sort-key="usedAmount" style="width:100px;"><span class="sort-label">已使用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="chatAmount" style="width:110px;"><span class="sort-label">对话已用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="drawAmount" style="width:110px;"><span class="sort-label">绘图已用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="pptAmount" style="width:110px;"><span class="sort-label">PPT已用金额(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgChatCost" style="width:110px;"><span class="sort-label">平均对话成本(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgDrawCost" style="width:110px;"><span class="sort-label">平均绘图成本(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="avgPptCost" style="width:110px;"><span class="sort-label">平均PPT成本(元)<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="chatCount" style="width:80px;"><span class="sort-label">AI对话次数<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="drawCount" style="width:80px;"><span class="sort-label">AI绘图张数<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="pptCount" style="width:80px;"><span class="sort-label">AI PPT次数<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="remainCredit" style="width:90px;"><span class="sort-label">剩余积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="usedCredit" style="width:90px;"><span class="sort-label">已使用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="chatCredit" style="width:90px;"><span class="sort-label">对话已用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="drawCredit" style="width:90px;"><span class="sort-label">绘图已用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="pptCredit" style="width:90px;"><span class="sort-label">PPT已用积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgChatCredit" style="width:90px;"><span class="sort-label">平均对话积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="th-sortable" data-sort-key="avgDrawCredit" style="width:90px;"><span class="sort-label">平均绘图积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
+                    <th class="th-sortable" data-sort-key="avgPptCredit" style="width:90px;"><span class="sort-label">平均PPT积分<span class="sort-carets"><i class="sort-up"></i><i class="sort-down"></i></span></span></th>
                     <th class="sticky-ops" style="width:100px;">操作</th>
                   </tr>
                 </thead>
@@ -1778,7 +1799,7 @@
               <button class="btn primary">查询</button>
               <button class="btn">重置</button>
             </div>
-            <div class="stat-dim-tip">指标按四组展示：概览 → 成本（元）→ 用量 → 积分。已使用金额/积分均可拆为对话与绘图；平均对话成本=对话已用金额÷AI对话次数；平均绘图成本=绘图已用金额÷AI绘图张数。仅支持对话的模型绘图指标为 0；仅支持绘图的模型对话指标为 0。</div>
+            <div class="stat-dim-tip">指标按四组展示：概览 → 成本（元）→ 用量 → 积分。已使用金额/积分均可拆为对话与绘图；平均对话成本=对话已用金额÷AI对话次数；平均绘图成本=绘图已用金额÷AI绘图张数。仅支持对话的模型绘图指标为 0；仅支持绘图的模型对话指标为 0。本页不统计 AI PPT。</div>
             <div class="stat-kpi-block">
               <div class="stat-kpi-block-title"><span class="dot base"></span>概览</div>
               <div class="stat-kpi-grid">
@@ -2408,6 +2429,7 @@
           <option value="">全部</option>
           <option value="AI 对话">AI 对话</option>
           <option value="AI 绘图">AI 绘图</option>
+          <option value="AI PPT">AI PPT</option>
         </select>
         <button class="btn primary" type="button" id="usageDetailQueryBtn">查询</button>
         <button class="btn" type="button" id="usageDetailResetBtn">重置</button>
@@ -2465,7 +2487,6 @@
       monthlyCredits: {
         enabled: true,
         defaultAmount: 1000,
-        personalAmount: 1000,
       },
     };
     const DEFAULT_FEATURED_PROMPTS = [
@@ -2477,7 +2498,9 @@
     let featuredPromptRows = DEFAULT_FEATURED_PROMPTS.map((item) => Object.assign({}, item));
     let featuredPromptEditingId = null;
     const DEFAULT_PPT_OUTLINE_CREDIT = 20;
+    const DEFAULT_PPT_UNIT_PRICE = 0.5;
     let pptOutlineCredit = DEFAULT_PPT_OUTLINE_CREDIT;
+    let pptUnitPrice = DEFAULT_PPT_UNIT_PRICE;
     /** @deprecated 兼容旧版「按页数档位」本地数据，仅用于迁移读取，不再提供档位编辑 UI */
     const DEFAULT_PPT_PAGE_TIERS = [
       { id: 'ppt-tier-1', minPages: 8, maxPages: 10, credits: 15 },
@@ -2572,10 +2595,10 @@
     const btnResetDailySignin = document.getElementById('btnResetDailySignin');
     const monthlyCreditsEnabledInput = document.getElementById('monthlyCreditsEnabledInput');
     const monthlyCreditsDefaultInput = document.getElementById('monthlyCreditsDefaultInput');
-    const monthlyCreditsPersonalInput = document.getElementById('monthlyCreditsPersonalInput');
     const btnSaveMonthlyCredits = document.getElementById('btnSaveMonthlyCredits');
     const btnResetMonthlyCredits = document.getElementById('btnResetMonthlyCredits');
     const pptOutlineCreditInput = document.getElementById('pptOutlineCreditInput');
+    const pptUnitPriceInput = document.getElementById('pptUnitPriceInput');
     const btnSavePptOutlineCredit = document.getElementById('btnSavePptOutlineCredit');
     const btnResetPptOutlineCredit = document.getElementById('btnResetPptOutlineCredit');
     const unitTableBody = document.getElementById('unitTableBody');
@@ -2826,7 +2849,7 @@
         remarkMeta: '指令长度：0 → 86 字',
         remarkBody: '你是 ALLiN1 科研助手，面向高校科研管理场景。回答应简洁、专业，优先使用中文。不得生成违法、虚假或涉及国家秘密的内容。',
       },
-      { time: '2026-07-10 09:25:41', operator: '李月明', action: '修改基础积分', remark: '平台总开关：关 → 开｜单位默认额度：800 → 1000｜个人版额度：800 → 1000' },
+      { time: '2026-07-10 09:25:41', operator: '李月明', action: '修改基础积分', remark: '平台总开关：关 → 开｜单位默认额度：800 → 1000（含个人版/公共平台）' },
       { time: '2026-07-11 14:08:02', operator: '丁真', action: '修改活动赠送积分', remark: '平台总开关：开｜每日可领：10 → 20｜有效天数：15 → 30' },
       { time: '2026-07-13 10:06:22', operator: '李月明', action: '修改对话上下文控制', remark: '平台总开关：开｜对话轮数：30 → 20｜上下文长度：64000 → 32000 字符' },
       {
@@ -3220,18 +3243,41 @@
       const migrated = migratePptOutlineCreditFromLegacy(loadModelCreditsConfig());
       return migrated != null ? migrated : DEFAULT_PPT_OUTLINE_CREDIT;
     }
-    function fillPptOutlineCreditForm(credit) {
+    function loadPptUnitPrice() {
+      const saved = loadModelCreditsConfig();
+      if (!saved || typeof saved !== 'object') return DEFAULT_PPT_UNIT_PRICE;
+      const raw = saved.pptUnitPrice != null ? saved.pptUnitPrice : saved.pptActualCost;
+      if (Number.isFinite(Number(raw)) && Number(raw) >= 0) {
+        return Math.round(Number(raw) * 100) / 100;
+      }
+      return DEFAULT_PPT_UNIT_PRICE;
+    }
+    function fillPptOutlineCreditForm(credit, price) {
       pptOutlineCredit = Number(credit) > 0 ? Math.round(Number(credit)) : DEFAULT_PPT_OUTLINE_CREDIT;
+      const priceNum = Number(price);
+      pptUnitPrice = Number.isFinite(priceNum) && priceNum >= 0
+        ? Math.round(priceNum * 100) / 100
+        : DEFAULT_PPT_UNIT_PRICE;
       if (pptOutlineCreditInput) pptOutlineCreditInput.value = String(pptOutlineCredit);
+      if (pptUnitPriceInput) pptUnitPriceInput.value = String(pptUnitPrice);
     }
     function readPptOutlineCreditFromForm() {
-      const value = parseInt(pptOutlineCreditInput && pptOutlineCreditInput.value, 10);
-      if (!Number.isFinite(value) || value < 1 || value > 9999) {
+      const credit = parseInt(pptOutlineCreditInput && pptOutlineCreditInput.value, 10);
+      if (!Number.isFinite(credit) || credit < 1 || credit > 9999) {
         alert('请填写有效的生成大纲积分（1–9999 的正整数）');
         if (pptOutlineCreditInput) pptOutlineCreditInput.focus();
         return null;
       }
-      return value;
+      const price = parseFloat(pptUnitPriceInput && pptUnitPriceInput.value);
+      if (!Number.isFinite(price) || price < 0 || price > 9999) {
+        alert('请填写有效的单次价格（0–9999 的数字，单位：元/次）');
+        if (pptUnitPriceInput) pptUnitPriceInput.focus();
+        return null;
+      }
+      return {
+        credit,
+        price: Math.round(price * 100) / 100,
+      };
     }
     function buildModelCreditsPayload() {
       const map = Object.fromEntries(DEFAULT_CLIENT_MODEL_CREDITS.map((item) => [item.code.toLowerCase(), Object.assign({}, item)]));
@@ -3262,6 +3308,9 @@
         map[row.code.toLowerCase()] = Object.assign(map[row.code.toLowerCase()] || {}, entry);
       });
       const outlineCredit = Number(pptOutlineCredit) > 0 ? Math.round(Number(pptOutlineCredit)) : DEFAULT_PPT_OUTLINE_CREDIT;
+      const unitPrice = Number.isFinite(Number(pptUnitPrice)) && Number(pptUnitPrice) >= 0
+        ? Math.round(Number(pptUnitPrice) * 100) / 100
+        : DEFAULT_PPT_UNIT_PRICE;
       return {
         models: Object.values(map).filter((item) => (item.chatCreditCost > 0 || item.drawCreditCost > 0 || item.creditCost > 0)).sort((a, b) => {
           const providerDiff = providerSortRank(a.provider) - providerSortRank(b.provider);
@@ -3274,6 +3323,7 @@
           logo: item.logo || '',
         })),
         pptOutlineCredit: outlineCredit,
+        pptUnitPrice: unitPrice,
         // 兼容旧用户端：不再按页数分档计价，保留空结构避免读到脏档位
         pptPageTiers: [],
         pptPageCosts: {},
@@ -3872,17 +3922,17 @@
       model: { key: 'usedCredit', dir: 'desc' }
     };
     const statUnitRows = [
-      { name: '锐竞信息', userCount: 12, visitors: 1, pageViews: 5, remainAmount: 486.52, usedAmount: 128.36, chatAmount: 98.8, drawAmount: 29.56, avgChatCost: 0.3952, avgDrawCost: 0.4768, remainCredit: 98200, usedCredit: 4860, chatCredit: 3900, drawCredit: 960, chatCount: 250, drawCount: 62, avgChatCredit: 15.6, avgDrawCredit: 15.48 },
-      { name: '演示单位', userCount: 6, visitors: 1, pageViews: 3, remainAmount: 402.18, usedAmount: 82.14, chatAmount: 63.2, drawAmount: 18.94, avgChatCost: 0.395, avgDrawCost: 0.4984, remainCredit: 72400, usedCredit: 3120, chatCredit: 2520, drawCredit: 600, chatCount: 160, drawCount: 38, avgChatCredit: 15.75, avgDrawCredit: 15.79 },
-      { name: '科研管理-演示单位', userCount: 8, visitors: 0, pageViews: 2, remainAmount: 378.65, usedAmount: 76.82, chatAmount: 59.1, drawAmount: 17.72, avgChatCost: 0.394, avgDrawCost: 0.4922, remainCredit: 65850, usedCredit: 2940, chatCredit: 2400, drawCredit: 540, chatCount: 150, drawCount: 36, avgChatCredit: 16, avgDrawCredit: 15 },
-      { name: '中山大学附属肿瘤医院', userCount: 56, visitors: 0, pageViews: 1, remainAmount: 379.3965, usedAmount: 46.4567, chatAmount: 37.73, drawAmount: 8.7267, avgChatCost: 0.4192, avgDrawCost: 0.3636, remainCredit: 50000, usedCredit: 1940, chatCredit: 1580, drawCredit: 360, chatCount: 90, drawCount: 24, avgChatCredit: 17.56, avgDrawCredit: 15 }
+      { name: '锐竞信息', userCount: 12, visitors: 1, pageViews: 5, remainAmount: 486.52, usedAmount: 144.36, chatAmount: 98.8, drawAmount: 29.56, pptAmount: 16, avgChatCost: 0.3952, avgDrawCost: 0.4768, avgPptCost: 0.5, remainCredit: 98200, usedCredit: 5500, chatCredit: 3900, drawCredit: 960, pptCredit: 640, chatCount: 250, drawCount: 62, pptCount: 32, avgChatCredit: 15.6, avgDrawCredit: 15.48, avgPptCredit: 20 },
+      { name: '演示单位', userCount: 6, visitors: 1, pageViews: 3, remainAmount: 402.18, usedAmount: 94.14, chatAmount: 63.2, drawAmount: 18.94, pptAmount: 12, avgChatCost: 0.395, avgDrawCost: 0.4984, avgPptCost: 0.5, remainCredit: 72400, usedCredit: 3600, chatCredit: 2520, drawCredit: 600, pptCredit: 480, chatCount: 160, drawCount: 38, pptCount: 24, avgChatCredit: 15.75, avgDrawCredit: 15.79, avgPptCredit: 20 },
+      { name: '科研管理-演示单位', userCount: 8, visitors: 0, pageViews: 2, remainAmount: 378.65, usedAmount: 85.82, chatAmount: 59.1, drawAmount: 17.72, pptAmount: 9, avgChatCost: 0.394, avgDrawCost: 0.4922, avgPptCost: 0.5, remainCredit: 65850, usedCredit: 3300, chatCredit: 2400, drawCredit: 540, pptCredit: 360, chatCount: 150, drawCount: 36, pptCount: 18, avgChatCredit: 16, avgDrawCredit: 15, avgPptCredit: 20 },
+      { name: '中山大学附属肿瘤医院', userCount: 56, visitors: 0, pageViews: 1, remainAmount: 379.3965, usedAmount: 52.4567, chatAmount: 37.73, drawAmount: 8.7267, pptAmount: 6, avgChatCost: 0.4192, avgDrawCost: 0.3636, avgPptCost: 0.5, remainCredit: 50000, usedCredit: 2180, chatCredit: 1580, drawCredit: 360, pptCredit: 240, chatCount: 90, drawCount: 24, pptCount: 12, avgChatCredit: 17.56, avgDrawCredit: 15, avgPptCredit: 20 }
     ];
     const statUserRows = [
-      { name: '左志司', phone: '13640353406', email: '13640353406@13640353406.com', unitName: '锐竞信息', usedAmount: 35.62, chatAmount: 27.12, drawAmount: 8.5, avgChatCost: 0.3988, avgDrawCost: 0.4722, remainCredit: 940, usedCredit: 1280, chatCredit: 1040, drawCredit: 240, chatCount: 68, drawCount: 18, avgChatCredit: 15.29, avgDrawCredit: 13.33 },
-      { name: '卢卡', phone: '17893330222', email: 'luka@qq.com', unitName: '演示单位', usedAmount: 26.4, chatAmount: 20.4, drawAmount: 6, avgChatCost: 0.3923, avgDrawCost: 0.5, remainCredit: 1040, usedCredit: 960, chatCredit: 780, drawCredit: 180, chatCount: 52, drawCount: 12, avgChatCredit: 15, avgDrawCredit: 15 },
-      { name: '王测试', phone: '13800138000', email: 'wang@test.com', unitName: '科研管理-演示单位', usedAmount: 19.9, chatAmount: 15.9, drawAmount: 4, avgChatCost: 0.3975, avgDrawCost: 0.5, remainCredit: 880, usedCredit: 720, chatCredit: 600, drawCredit: 120, chatCount: 40, drawCount: 8, avgChatCredit: 15, avgDrawCredit: 15 },
-      { name: '赵芳', phone: '13900139000', email: 'zhao@test.com', unitName: '中山大学附属肿瘤医院', usedAmount: 15.1, chatAmount: 12.1, drawAmount: 3, avgChatCost: 0.4033, avgDrawCost: 0.5, remainCredit: 760, usedCredit: 540, chatCredit: 450, drawCredit: 90, chatCount: 30, drawCount: 6, avgChatCredit: 15, avgDrawCredit: 15 },
-      { name: '陈晨', phone: '13700137000', email: 'chen@test.com', unitName: '锐竞信息', usedAmount: 11.56, chatAmount: 9.56, drawAmount: 2, avgChatCost: 0.3983, avgDrawCost: 0.5, remainCredit: 1020, usedCredit: 420, chatCredit: 360, drawCredit: 60, chatCount: 24, drawCount: 4, avgChatCredit: 15, avgDrawCredit: 15 }
+      { name: '左志司', phone: '13640353406', email: '13640353406@13640353406.com', unitName: '锐竞信息', usedAmount: 43.62, chatAmount: 27.12, drawAmount: 8.5, pptAmount: 8, avgChatCost: 0.3988, avgDrawCost: 0.4722, avgPptCost: 0.5, remainCredit: 940, usedCredit: 1440, chatCredit: 1040, drawCredit: 240, pptCredit: 160, chatCount: 68, drawCount: 18, pptCount: 8, avgChatCredit: 15.29, avgDrawCredit: 13.33, avgPptCredit: 20 },
+      { name: '卢卡', phone: '17893330222', email: 'luka@qq.com', unitName: '演示单位', usedAmount: 32.4, chatAmount: 20.4, drawAmount: 6, pptAmount: 6, avgChatCost: 0.3923, avgDrawCost: 0.5, avgPptCost: 0.5, remainCredit: 1040, usedCredit: 1080, chatCredit: 780, drawCredit: 180, pptCredit: 120, chatCount: 52, drawCount: 12, pptCount: 6, avgChatCredit: 15, avgDrawCredit: 15, avgPptCredit: 20 },
+      { name: '王测试', phone: '13800138000', email: 'wang@test.com', unitName: '科研管理-演示单位', usedAmount: 23.9, chatAmount: 15.9, drawAmount: 4, pptAmount: 4, avgChatCost: 0.3975, avgDrawCost: 0.5, avgPptCost: 0.5, remainCredit: 880, usedCredit: 800, chatCredit: 600, drawCredit: 120, pptCredit: 80, chatCount: 40, drawCount: 8, pptCount: 4, avgChatCredit: 15, avgDrawCredit: 15, avgPptCredit: 20 },
+      { name: '赵芳', phone: '13900139000', email: 'zhao@test.com', unitName: '中山大学附属肿瘤医院', usedAmount: 18.1, chatAmount: 12.1, drawAmount: 3, pptAmount: 3, avgChatCost: 0.4033, avgDrawCost: 0.5, avgPptCost: 0.5, remainCredit: 760, usedCredit: 600, chatCredit: 450, drawCredit: 90, pptCredit: 60, chatCount: 30, drawCount: 6, pptCount: 3, avgChatCredit: 15, avgDrawCredit: 15, avgPptCredit: 20 },
+      { name: '陈晨', phone: '13700137000', email: 'chen@test.com', unitName: '锐竞信息', usedAmount: 13.56, chatAmount: 9.56, drawAmount: 2, pptAmount: 2, avgChatCost: 0.3983, avgDrawCost: 0.5, avgPptCost: 0.5, remainCredit: 1020, usedCredit: 460, chatCredit: 360, drawCredit: 60, pptCredit: 40, chatCount: 24, drawCount: 4, pptCount: 2, avgChatCredit: 15, avgDrawCredit: 15, avgPptCredit: 20 }
     ];
     const statModelRows = [
       { name: 'GPT-5.5', usedAmount: 74.52, chatAmount: 74.52, drawAmount: 0, avgChatCost: 0.414, avgDrawCost: null, usedCredit: 2160, chatCredit: 2160, drawCredit: 0, chatCount: 180, drawCount: 0, avgChatCredit: 12, avgDrawCredit: null },
@@ -3963,16 +4013,21 @@
           '<td>' + formatStatFloat(item.usedAmount, 4) + '</td>' +
           '<td>' + formatStatFloat(item.chatAmount, 4) + '</td>' +
           '<td>' + formatStatFloat(item.drawAmount, 4) + '</td>' +
+          '<td>' + formatStatFloat(item.pptAmount, 4) + '</td>' +
           '<td>' + formatStatFloat(item.avgChatCost, 4) + '</td>' +
           '<td>' + formatStatFloat(item.avgDrawCost, 4) + '</td>' +
+          '<td>' + formatStatFloat(item.avgPptCost, 4) + '</td>' +
           '<td>' + item.chatCount + '</td>' +
           '<td>' + item.drawCount + '</td>' +
+          '<td>' + item.pptCount + '</td>' +
           '<td>' + formatStatInt(item.remainCredit) + '</td>' +
           '<td>' + formatStatInt(item.usedCredit) + '</td>' +
           '<td>' + formatStatInt(item.chatCredit) + '</td>' +
           '<td>' + formatStatInt(item.drawCredit) + '</td>' +
+          '<td>' + formatStatInt(item.pptCredit) + '</td>' +
           '<td>' + formatStatFloat(item.avgChatCredit, 2) + '</td>' +
           '<td>' + formatStatFloat(item.avgDrawCredit, 2) + '</td>' +
+          '<td>' + formatStatFloat(item.avgPptCredit, 2) + '</td>' +
           '<td class="ops sticky-ops"><a href="#" class="usage-detail-link" data-scope="unit" data-name="' + escapeHtml(item.name) + '">使用金额明细</a></td>' +
         '</tr>'
       )).join('');
@@ -3991,16 +4046,21 @@
           '<td>' + formatStatFloat(item.usedAmount, 2) + '</td>' +
           '<td>' + formatStatFloat(item.chatAmount, 2) + '</td>' +
           '<td>' + formatStatFloat(item.drawAmount, 2) + '</td>' +
+          '<td>' + formatStatFloat(item.pptAmount, 2) + '</td>' +
           '<td>' + formatStatFloat(item.avgChatCost, 4) + '</td>' +
           '<td>' + formatStatFloat(item.avgDrawCost, 4) + '</td>' +
+          '<td>' + formatStatFloat(item.avgPptCost, 4) + '</td>' +
           '<td>' + item.chatCount + '</td>' +
           '<td>' + item.drawCount + '</td>' +
+          '<td>' + item.pptCount + '</td>' +
           '<td>' + formatStatInt(item.remainCredit) + '</td>' +
           '<td>' + formatStatInt(item.usedCredit) + '</td>' +
           '<td>' + formatStatInt(item.chatCredit) + '</td>' +
           '<td>' + formatStatInt(item.drawCredit) + '</td>' +
+          '<td>' + formatStatInt(item.pptCredit) + '</td>' +
           '<td>' + formatStatFloat(item.avgChatCredit, 2) + '</td>' +
           '<td>' + formatStatFloat(item.avgDrawCredit, 2) + '</td>' +
+          '<td>' + formatStatFloat(item.avgPptCredit, 2) + '</td>' +
           '<td class="ops sticky-ops"><a href="#" class="usage-detail-link" data-scope="user" data-name="' + escapeHtml(item.name) + '">使用金额明细</a></td>' +
         '</tr>'
       )).join('');
@@ -4049,11 +4109,15 @@
     const usageDetailContext = { scope: '', name: '' };
     const usageDetailAllRows = [
       { unitName: '锐竞信息', userName: '左志司', phone: '13640353406', email: '13640353406@13640353406.com', usedAt: '2026-07-15 18:22:11', biz: 'AI 对话', modelName: 'GPT-5.5', usedAmount: 0.41445114, creditCost: -12 },
+      { unitName: '锐竞信息', userName: '左志司', phone: '13640353406', email: '13640353406@13640353406.com', usedAt: '2026-07-15 17:05:28', biz: 'AI PPT', modelName: 'AiPPT', usedAmount: 0.5, creditCost: -20 },
       { unitName: '锐竞信息', userName: '陈晨', phone: '13700137000', email: 'chen@test.com', usedAt: '2026-07-15 16:08:44', biz: 'AI 绘图', modelName: '即梦AI / Seedream', usedAmount: 0.4625, creditCost: -15 },
       { unitName: '演示单位', userName: '卢卡', phone: '17893330222', email: 'luka@qq.com', usedAt: '2026-07-15 14:31:02', biz: 'AI 对话', modelName: 'Gemini-3-Pro', usedAmount: 0.3982, creditCost: -10 },
+      { unitName: '演示单位', userName: '卢卡', phone: '17893330222', email: 'luka@qq.com', usedAt: '2026-07-15 13:18:46', biz: 'AI PPT', modelName: 'AiPPT', usedAmount: 0.5, creditCost: -20 },
       { unitName: '演示单位', userName: '卢卡', phone: '17893330222', email: 'luka@qq.com', usedAt: '2026-07-14 21:05:19', biz: 'AI 绘图', modelName: '通义万相', usedAmount: 0.5, creditCost: -15 },
       { unitName: '科研管理-演示单位', userName: '王测试', phone: '13800138000', email: 'wang@test.com', usedAt: '2026-07-14 11:49:08', biz: 'AI 对话', modelName: 'Claude-4.6-Sonnet', usedAmount: 0.2343, creditCost: -8 },
+      { unitName: '科研管理-演示单位', userName: '王测试', phone: '13800138000', email: 'wang@test.com', usedAt: '2026-07-14 10:22:01', biz: 'AI PPT', modelName: 'AiPPT', usedAmount: 0.5, creditCost: -20 },
       { unitName: '中山大学附属肿瘤医院', userName: '赵芳', phone: '13900139000', email: 'zhao@test.com', usedAt: '2026-07-13 17:49:08', biz: 'AI 对话', modelName: 'Qwen3.5-Plus', usedAmount: 0.0717, creditCost: -2 },
+      { unitName: '中山大学附属肿瘤医院', userName: '赵芳', phone: '13900139000', email: 'zhao@test.com', usedAt: '2026-07-13 16:30:55', biz: 'AI PPT', modelName: 'AiPPT', usedAmount: 0.5, creditCost: -20 },
       { unitName: '广州仁望医院', userName: 'zeng', phone: '15963224300', email: '1341241242@khwant.cn', usedAt: '2026-07-03 17:49:08', biz: 'AI 对话', modelName: 'Gemini-1.5-Flash', usedAmount: 0.41445114, creditCost: -3 },
       { unitName: '锐竞信息', userName: '左志司', phone: '13640353406', email: '13640353406@13640353406.com', usedAt: '2026-06-28 09:12:33', biz: 'AI 对话', modelName: 'Claude-4.6-Opus', usedAmount: 0.2381, creditCost: null },
       { unitName: '演示单位', userName: '卢卡', phone: '17893330222', email: 'luka@qq.com', usedAt: '2026-06-20 15:40:01', biz: 'AI 绘图', modelName: '即梦AI / Seedream', usedAmount: 0.4768, creditCost: -15 },
@@ -4229,7 +4293,7 @@
       fillChatContextForm(cfg);
       fillDailySigninForm(cfg);
       fillMonthlyCreditsForm(cfg);
-      fillPptOutlineCreditForm(loadPptOutlineCredit());
+      fillPptOutlineCreditForm(loadPptOutlineCredit(), loadPptUnitPrice());
     }
     function fillChatContextForm(config) {
       const cfg = (config && config.chatContext) ? config.chatContext : DEFAULT_PLATFORM_CONFIG.chatContext;
@@ -4261,25 +4325,17 @@
       const cfg = (config && config.monthlyCredits) ? config.monthlyCredits : DEFAULT_PLATFORM_CONFIG.monthlyCredits;
       monthlyCreditsEnabledInput.checked = cfg.enabled !== false;
       monthlyCreditsDefaultInput.value = cfg.defaultAmount != null ? cfg.defaultAmount : 1000;
-      monthlyCreditsPersonalInput.value = cfg.personalAmount != null ? cfg.personalAmount : 1000;
     }
     function readMonthlyCreditsFromForm() {
       const defaultAmount = parseInt(monthlyCreditsDefaultInput.value, 10);
-      const personalAmount = parseInt(monthlyCreditsPersonalInput.value, 10);
       if (!Number.isFinite(defaultAmount) || defaultAmount < 0) {
         alert('请填写有效的单位默认基础积分（0 或正整数）');
         monthlyCreditsDefaultInput.focus();
         return null;
       }
-      if (!Number.isFinite(personalAmount) || personalAmount < 0) {
-        alert('请填写有效的个人版基础积分（0 或正整数）');
-        monthlyCreditsPersonalInput.focus();
-        return null;
-      }
       return {
         enabled: monthlyCreditsEnabledInput.checked,
         defaultAmount: defaultAmount,
-        personalAmount: personalAmount,
       };
     }
     function fillDailySigninForm(config) {
@@ -4782,7 +4838,7 @@
         '修改基础积分',
         '平台总开关：' + (before.enabled !== false ? '开' : '关') + ' → ' + (monthlyCredits.enabled ? '开' : '关') +
         '｜单位默认额度：' + before.defaultAmount + ' → ' + monthlyCredits.defaultAmount +
-        '｜个人版额度：' + before.personalAmount + ' → ' + monthlyCredits.personalAmount
+        '（含个人版/公共平台）'
       );
       alert('基础积分配置已保存，用户端将自动生效');
     });
@@ -4792,32 +4848,38 @@
       const next = { ...current, monthlyCredits: { ...DEFAULT_PLATFORM_CONFIG.monthlyCredits } };
       persistPlatformConfig(next);
       fillMonthlyCreditsForm(next);
-      pushPlatformLog('恢复基础积分默认', '单位/个人版均为 1000 积分/月，已开启');
-      alert('已恢复默认：单位/个人版均为 1000 积分/月，已开启');
+      pushPlatformLog('恢复基础积分默认', '单位默认额度 1000 积分/月（含个人版/公共平台），已开启');
+      alert('已恢复默认：单位默认额度 1000 积分/月（含个人版/公共平台），已开启');
     });
     if (btnSavePptOutlineCredit) {
       btnSavePptOutlineCredit.addEventListener('click', () => {
-        const credit = readPptOutlineCreditFromForm();
-        if (credit == null) return;
-        const before = pptOutlineCredit;
-        pptOutlineCredit = credit;
+        const form = readPptOutlineCreditFromForm();
+        if (form == null) return;
+        const beforeCredit = pptOutlineCredit;
+        const beforePrice = pptUnitPrice;
+        pptOutlineCredit = form.credit;
+        pptUnitPrice = form.price;
         syncModelCreditsToClient();
-        fillPptOutlineCreditForm(credit);
+        fillPptOutlineCreditForm(form.credit, form.price);
         pushPlatformLog(
           '修改 AI PPT 积分扣减',
-          '生成大纲：' + before + ' → ' + credit + ' 积分/次（仅生成大纲成功扣费）'
+          '生成大纲：' + beforeCredit + ' → ' + form.credit + ' 积分/次；单次价格：' + beforePrice + ' → ' + form.price + ' 元/次（仅生成大纲成功扣费）'
         );
-        alert('AI PPT 积分已保存，用户端将自动生效');
+        alert('AI PPT 配置已保存，用户端积分将自动生效');
       });
     }
     if (btnResetPptOutlineCredit) {
       btnResetPptOutlineCredit.addEventListener('click', () => {
-        if (!confirm('确定恢复 AI PPT 积分为默认（生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次）？')) return;
+        if (!confirm('确定恢复 AI PPT 默认为：生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次，单次价格 ' + DEFAULT_PPT_UNIT_PRICE + ' 元/次？')) return;
         pptOutlineCredit = DEFAULT_PPT_OUTLINE_CREDIT;
+        pptUnitPrice = DEFAULT_PPT_UNIT_PRICE;
         syncModelCreditsToClient();
-        fillPptOutlineCreditForm(DEFAULT_PPT_OUTLINE_CREDIT);
-        pushPlatformLog('恢复 AI PPT 积分默认', '生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次（仅生成大纲成功扣费）');
-        alert('已恢复默认：生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次');
+        fillPptOutlineCreditForm(DEFAULT_PPT_OUTLINE_CREDIT, DEFAULT_PPT_UNIT_PRICE);
+        pushPlatformLog(
+          '恢复 AI PPT 积分默认',
+          '生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次，单次价格 ' + DEFAULT_PPT_UNIT_PRICE + ' 元/次（仅生成大纲成功扣费）'
+        );
+        alert('已恢复默认：生成大纲 ' + DEFAULT_PPT_OUTLINE_CREDIT + ' 积分/次，单次价格 ' + DEFAULT_PPT_UNIT_PRICE + ' 元/次');
       });
     }
     modelTabModelList.addEventListener('click', () => {
@@ -5269,7 +5331,8 @@
     renderPlatformLogs();
     renderPromptLogs();
     pptOutlineCredit = loadPptOutlineCredit();
-    fillPptOutlineCreditForm(pptOutlineCredit);
+    pptUnitPrice = loadPptUnitPrice();
+    fillPptOutlineCreditForm(pptOutlineCredit, pptUnitPrice);
     syncModelCreditsToClient();
     syncUnitConfigToClient();
   </script>
